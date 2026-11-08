@@ -1,0 +1,9 @@
+# Exclude third-party libraries and assets from language statistics
+Scripts/** linguist-vendored
+Content/** linguist-vendored
+*.map linguist-vendored
+*.json linguist-vendored
+*.sql linguist-vendored
+
+# Treat Razor views as C#
+*.cshtml linguist-language=C#
