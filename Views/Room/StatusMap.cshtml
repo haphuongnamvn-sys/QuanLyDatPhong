@@ -1,0 +1,119 @@
+@model IEnumerable<QuanLyLuuTru.Models.Room>
+@using QuanLyLuuTru.Models
+@{
+    ViewBag.Title = "Sơ đồ trạng thái phòng";
+    var roomTypes = ViewBag.RoomTypes as Dictionary<int, RoomType>;
+    var activeBookings = ViewBag.ActiveBookings as List<Booking>;
+}
+
+<div class="page-header-box">
+    <div>
+        <h1 class="page-title">Sơ đồ Trạng thái Phòng</h1>
+        <p class="page-subtitle">Theo dõi trực quan phòng Trống, Đang ở, Cần dọn vệ sinh và Bảo trì.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="@Url.Action("CheckAvailability", "Booking")" class="btn btn-outline-danger btn-sm">Kiểm tra lịch trống</a>
+        <a href="@Url.Action("Create", "Booking")" class="btn btn-danger btn-sm fw-semibold">+ Đặt phòng mới</a>
+    </div>
+</div>
+
+<!-- 4 thẻ thống kê -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card stat-green">
+            <div class="stat-label">Phòng trống</div>
+            <div class="stat-value text-success">@ViewBag.AvailableRooms <span class="fs-6 fw-normal text-muted">/ @ViewBag.TotalRooms phòng</span></div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-label">Phòng đang ở</div>
+            <div class="stat-value text-danger">@ViewBag.OccupiedRooms <span class="fs-6 fw-normal text-muted">phòng</span></div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card stat-amber">
+            <div class="stat-label">Phòng cần dọn</div>
+            <div class="stat-value text-warning">@ViewBag.CleaningRooms <span class="fs-6 fw-normal text-muted">phòng</span></div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card stat-gray">
+            <div class="stat-label">Phòng bảo trì</div>
+            <div class="stat-value text-secondary">@ViewBag.MaintenanceRooms <span class="fs-6 fw-normal text-muted">phòng</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- Lưới sơ đồ phòng -->
+<div class="card-custom">
+    <div class="card-custom-header">
+        <span>Sơ đồ phòng theo tầng (@Model.Count() phòng)</span>
+    </div>
+    <div class="card-custom-body">
+        <div class="row g-3">
+            @foreach (var room in Model)
+            {
+                var rt = roomTypes != null && roomTypes.ContainsKey(room.RoomTypeId) ? roomTypes[room.RoomTypeId] : null;
+                var currentBooking = activeBookings?.FirstOrDefault(b => b.RoomId == room.Id && b.Status == "CheckedIn")
+                                  ?? activeBookings?.FirstOrDefault(b => b.RoomId == room.Id && b.Status == "Booked");
+
+                string boxClass = "room-available";
+                if (room.Status == "Occupied") { boxClass = "room-occupied"; }
+                else if (room.Status == "Cleaning") { boxClass = "room-cleaning"; }
+                else if (room.Status == "Maintenance") { boxClass = "room-maintenance"; }
+
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <div class="room-box @boxClass">
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="room-number-tag">@room.RoomNumber <small class="text-muted fw-normal fs-6">(Tầng @room.Floor)</small></span>
+                                <span class="badge-status @room.StatusBadgeClass">@room.StatusText</span>
+                            </div>
+                            <div class="small fw-semibold text-dark mb-1">@(rt != null ? rt.Name : "")</div>
+                            <div class="small text-muted mb-2">
+                                Giá: <strong class="text-danger">@(rt != null ? rt.BasePrice.ToString("N0") : "0")đ</strong>/đêm
+                            </div>
+
+                            @if (currentBooking != null)
+                            {
+                                <div class="p-2 rounded bg-light border small mb-2">
+                                    <div class="fw-bold text-primary">@currentBooking.BookingCode - @currentBooking.CustomerName</div>
+                                    <div class="text-muted">@currentBooking.CheckInDate.ToString("dd/MM") &rarr; @currentBooking.CheckOutDate.ToString("dd/MM") (@currentBooking.StatusText)</div>
+                                </div>
+                            }
+                            else if (!string.IsNullOrEmpty(room.Notes))
+                            {
+                                <div class="small text-muted mb-2">@room.Notes</div>
+                            }
+                        </div>
+
+                        <div class="mt-2 pt-2 border-top d-flex gap-1">
+                            @if (room.Status == "Occupied" && currentBooking != null)
+                            {
+                                <a href="@Url.Action("AddService", "Booking", new { id = currentBooking.Id })" class="btn btn-sm btn-outline-primary w-50">+ Dịch vụ</a>
+                                <a href="@Url.Action("CheckOut", "Booking", new { id = currentBooking.Id })" class="btn btn-sm btn-danger w-50">Trả phòng</a>
+                            }
+                            else if (currentBooking != null && currentBooking.Status == "Booked")
+                            {
+                                <a href="@Url.Action("Details", "Booking", new { id = currentBooking.Id })" class="btn btn-sm btn-primary w-100">Nhận phòng (@currentBooking.BookingCode)</a>
+                            }
+                            else if (room.Status == "Available")
+                            {
+                                <a href="@Url.Action("Create", "Booking", new { roomId = room.Id })" class="btn btn-sm btn-outline-success w-100">+ Đặt phòng</a>
+                            }
+                            else if (room.Status == "Cleaning")
+                            {
+                                <a href="@Url.Action("Index", "Housekeeping")" class="btn btn-sm btn-warning w-100">Xử lý dọn phòng</a>
+                            }
+                            else
+                            {
+                                <a href="@Url.Action("EditRoom", "Room", new { id = room.Id })" class="btn btn-sm btn-outline-secondary w-100">Cập nhật trạng thái</a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

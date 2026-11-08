@@ -1,0 +1,38 @@
+@{
+    ViewBag.Title = "Đăng nhập";
+}
+
+<div class="row justify-content-center mt-3">
+    <div class="col-md-5">
+        <div class="card-custom">
+            <div class="card-custom-header">
+                <span>&#128100; Đăng nhập tài khoản</span>
+                <a href="@Url.Action("Register", "Account")" class="btn btn-sm btn-outline-danger">Đăng ký mới</a>
+            </div>
+            <div class="card-custom-body">
+                @if (ViewBag.Error != null)
+                {
+                    <div class="alert alert-danger small">@ViewBag.Error</div>
+                }
+
+                @using (Html.BeginForm("Login", "Account", FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Tên đăng nhập</label>
+                        <input type="text" name="username" class="form-control" placeholder="Nhập tên đăng nhập..." required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Mật khẩu</label>
+                        <input type="password" name="password" class="form-control" placeholder="Nhập mật khẩu..." required />
+                    </div>
+                    <button type="submit" class="btn btn-danger w-100 fw-semibold py-2">Đăng nhập</button>
+                }
+
+                <div class="text-center mt-3 small">
+                    Chưa có tài khoản khách hàng? <a href="@Url.Action("Register", "Account")" class="text-danger fw-bold">Đăng ký tại đây</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

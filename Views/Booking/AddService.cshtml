@@ -1,0 +1,146 @@
+@model QuanLyLuuTru.Models.Booking
+@using QuanLyLuuTru.Models
+@{
+    var room = ViewBag.Room as Room;
+    var usedServices = ViewBag.UsedServices as List<BookingService>;
+    var availableServices = ViewBag.AvailableServices as List<ServiceItem>;
+    bool isStaffOrAdmin = ViewBag.IsStaffOrAdmin == true;
+    ViewBag.Title = (isStaffOrAdmin ? "Xác nhận dịch vụ phát sinh - " : "Đặt thêm dịch vụ - ") + Model.BookingCode;
+}
+
+<div class="card-custom" style="max-width: 820px; margin: 0 auto;">
+    <div class="card-custom-header">
+        <span>@(isStaffOrAdmin ? "Quản lý & Xác nhận Dịch vụ" : "Đặt thêm Dịch vụ Phát sinh") &mdash; Đơn <strong class="text-danger">@Model.BookingCode</strong> (Phòng @(room != null ? room.RoomNumber : ""))</span>
+        <a href="@Url.Action("Details", new { id = Model.Id })" class="btn btn-outline-secondary btn-sm">&larr; Quay lại chi tiết đơn</a>
+    </div>
+
+    <div class="card-custom-body">
+        <!-- Thông tin đơn đặt phòng -->
+        <div class="p-3 rounded bg-light border mb-4 d-flex flex-wrap justify-content-between align-items-center">
+            <div>
+                <div class="fw-bold text-dark">Khách hàng: @Model.CustomerName (@Model.CustomerPhone)</div>
+                <div class="small text-muted">Phòng @(room != null ? room.RoomNumber : "") &bull; Lưu trú: @Model.CheckInDate.ToString("dd/MM/yyyy") &rarr; @Model.CheckOutDate.ToString("dd/MM/yyyy")</div>
+            </div>
+            <div class="text-end mt-2 mt-sm-0">
+                <div class="small text-muted">Tổng tiền dịch vụ đã xác nhận</div>
+                <div class="fs-5 fw-bold text-danger">@Model.ServiceTotalAmount.ToString("N0") đ</div>
+            </div>
+        </div>
+
+        <!-- Form đặt thêm dịch vụ (nằm chung trong 1 khung liền mạch) -->
+        @using (Html.BeginForm("AddService", "Booking", FormMethod.Post, new { @class = "mb-4 pb-4 border-bottom" }))
+        {
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="bookingId" value="@Model.Id" />
+
+            <div class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label fw-semibold">Chọn dịch vụ muốn đặt (*)</label>
+                    <select name="serviceId" class="form-select" required>
+                        @foreach (var s in availableServices)
+                        {
+                            <option value="@s.Id">[@s.Category] @s.Name &mdash; @s.Price.ToString("N0")đ/@s.Unit</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Số lượng (*)</label>
+                    <input type="number" name="quantity" class="form-control" value="1" min="1" max="50" required />
+                </div>
+
+                <div class="col-md-5">
+                    <label class="form-label fw-semibold">Ghi chú yêu cầu</label>
+                    <input type="text" name="note" class="form-control" placeholder="VD: Mang lên phòng lúc 19h..." />
+                </div>
+
+                <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
+                    <span class="small text-muted">
+                        @(isStaffOrAdmin ? "Nhân viên thêm dịch vụ sẽ được xác nhận trực tiếp vào hóa đơn." : "Yêu cầu đặt dịch vụ sẽ gửi tới Nhân viên để xác nhận hoặc báo hết hàng.")
+                    </span>
+                    <button type="submit" class="btn btn-danger px-4 fw-semibold">
+                        @(isStaffOrAdmin ? "+ Thêm & Xác nhận dịch vụ" : "+ Đặt thêm dịch vụ")
+                    </button>
+                </div>
+            </div>
+        }
+
+        <!-- Danh sách dịch vụ đã đặt của đơn này -->
+        <h6 class="fw-bold text-dark mb-2">Danh sách dịch vụ đã đặt</h6>
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th>Tên dịch vụ</th>
+                        <th class="text-center">Số lượng</th>
+                        <th class="text-end">Đơn giá</th>
+                        <th class="text-end">Thành tiền</th>
+                        <th>Tình trạng</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (usedServices == null || !usedServices.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-3">Chưa có dịch vụ phát sinh nào.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var bs in usedServices)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@bs.ServiceName</div>
+                                    <div class="small text-muted">
+                                        @bs.CreatedAt.ToString("dd/MM HH:mm")
+                                        @if (!string.IsNullOrEmpty(bs.Note))
+                                        {
+                                            <span>&bull; @bs.Note</span>
+                                        }
+                                    </div>
+                                </td>
+                                <td class="text-center" style="white-space:nowrap;">@bs.Quantity @bs.Unit</td>
+                                <td class="text-end" style="white-space:nowrap;">@bs.UnitPrice.ToString("N0") đ</td>
+                                <td class="text-end fw-bold text-danger" style="white-space:nowrap;">@bs.TotalAmount.ToString("N0") đ</td>
+                                <td style="white-space:nowrap;">
+                                    <span class="badge-status @bs.StatusBadgeClass">@bs.StatusText</span>
+                                </td>
+                                <td class="text-end" style="white-space: nowrap;">
+                                    @if (isStaffOrAdmin && bs.Status == "Pending")
+                                    {
+                                        using (Html.BeginForm("ConfirmRequest", "Service", new { id = bs.Id, returnUrl = Url.Action("AddService", "Booking", new { id = Model.Id }) }, FormMethod.Post, new { style = "display:inline;" }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-success fw-semibold">&#10004; Xác nhận</button>
+                                        }
+                                        using (Html.BeginForm("RejectRequest", "Service", new { id = bs.Id, returnUrl = Url.Action("AddService", "Booking", new { id = Model.Id }) }, FormMethod.Post, new { style = "display:inline;" }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger ms-1">Báo hết hàng</button>
+                                        }
+                                    }
+                                    else if (bs.Status == "Pending" || isStaffOrAdmin)
+                                    {
+                                        using (Html.BeginForm("RemoveService", "Booking", FormMethod.Post, new { style = "display:inline;" }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@bs.Id" />
+                                            <input type="hidden" name="bookingId" value="@Model.Id" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">&times; Hủy</button>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="small text-muted">---</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

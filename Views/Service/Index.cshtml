@@ -1,0 +1,91 @@
+@model IEnumerable<QuanLyLuuTru.Models.ServiceItem>
+@{
+    ViewBag.Title = "Quản lý Dịch vụ";
+    var categories = ViewBag.Categories as List<string>;
+    var usageCounts = ViewBag.UsageCounts as Dictionary<int, int>;
+    bool isAdmin = ViewBag.IsAdmin == true;
+}
+
+<div class="page-header-box">
+    <div>
+        <h1 class="page-title">Quản lý Dịch vụ &amp; Bảng giá</h1>
+        <p class="page-subtitle">Quản trị viên cấu hình danh sách đồ uống, ăn sáng, giặt ủi, thuê xe và các khoản phụ thu (Thêm, Sửa, Xóa).</p>
+    </div>
+    @if (isAdmin)
+    {
+        <div>
+            <a href="@Url.Action("Create")" class="btn btn-danger btn-sm fw-semibold">+ Thêm dịch vụ mới</a>
+        </div>
+    }
+</div>
+
+<div class="card-custom">
+    <div class="card-custom-header">
+        <span>Danh sách dịch vụ (@Model.Count() dịch vụ)</span>
+        <div class="d-flex gap-1">
+            <a href="@Url.Action("Index")" class="btn btn-sm @(string.IsNullOrEmpty(ViewBag.SelectedCategory) ? "btn-danger" : "btn-outline-secondary")">Tất cả</a>
+            @if (categories != null)
+            {
+                foreach (var cat in categories)
+                {
+                    <a href="@Url.Action("Index", new { category = cat })" class="btn btn-sm @(ViewBag.SelectedCategory == cat ? "btn-danger" : "btn-outline-secondary")">@cat</a>
+                }
+            }
+        </div>
+    </div>
+    <div class="card-custom-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th class="ps-3">Mã</th>
+                        <th>Tên dịch vụ</th>
+                        <th>Nhóm</th>
+                        <th>Đơn vị</th>
+                        <th>Đơn giá</th>
+                        <th>Đã bán</th>
+                        <th>Tình trạng</th>
+                        @if (isAdmin)
+                        {
+                            <th class="text-end pe-3">Thao tác</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        int count = usageCounts != null && usageCounts.ContainsKey(item.Id) ? usageCounts[item.Id] : 0;
+                        <tr>
+                            <td class="ps-3 text-muted">#@item.Id</td>
+                            <td class="fw-bold">@item.Name</td>
+                            <td><span class="badge bg-light text-dark border">@item.Category</span></td>
+                            <td>@item.Unit</td>
+                            <td class="fw-bold text-danger" style="white-space:nowrap;">@item.Price.ToString("N0") đ</td>
+                            <td>@count @item.Unit</td>
+                            <td>
+                                @if (item.IsActive)
+                                {
+                                    <span class="badge-status badge-available">Đang bán</span>
+                                }
+                                else
+                                {
+                                    <span class="badge-status badge-maintenance">Tạm ngưng</span>
+                                }
+                            </td>
+                            @if (isAdmin)
+                            {
+                                <td class="text-end pe-3" style="white-space:nowrap;">
+                                    <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-sm btn-outline-primary">Sửa</a>
+                                    @using (Html.BeginForm("Delete", "Service", new { id = item.Id }, FormMethod.Post, new { style = "display:inline;" }))
+                                    {
+                                        <button type="submit" class="btn btn-sm btn-outline-danger ms-1" onclick="return confirm('Xóa dịch vụ này?');">Xóa</button>
+                                    }
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

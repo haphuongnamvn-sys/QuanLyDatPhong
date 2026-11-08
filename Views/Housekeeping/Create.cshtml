@@ -1,0 +1,72 @@
+@model QuanLyLuuTru.Models.HousekeepingTask
+@using QuanLyLuuTru.Models
+@{
+    ViewBag.Title = "Phân công dọn phòng mới";
+    var rooms = ViewBag.Rooms as List<Room>;
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card-custom">
+            <div class="card-custom-header">
+                <span>+ Phân công dọn phòng mới</span>
+                <a href="@Url.Action("Index")" class="btn btn-sm btn-outline-secondary">&larr; Danh sách công việc</a>
+            </div>
+            <div class="card-custom-body">
+                @using (Html.BeginForm("Create", "Housekeeping", FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Chọn Phòng cần dọn (*)</label>
+                        <select name="roomId" class="form-select" required>
+                            @foreach (var r in rooms)
+                            {
+                                <option value="@r.Id" @(r.Status == "Cleaning" ? "selected" : "")>
+                                    Phòng @r.RoomNumber (Tầng @r.Floor) &mdash; [@r.StatusText]
+                                </option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nhân viên phụ trách (*)</label>
+                        <select name="staffName" class="form-select">
+                            <option value="Cô Nguyễn Thị Lan">Cô Nguyễn Thị Lan</option>
+                            <option value="Chị Trần Thanh Mai">Chị Trần Thanh Mai</option>
+                            <option value="Anh Lê Văn Tùng">Anh Lê Văn Tùng</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Loại công việc</label>
+                        <select name="taskType" class="form-select">
+                            <option value="Dọn sau trả phòng">Dọn sau trả phòng</option>
+                            <option value="Dọn phòng định kỳ">Dọn phòng định kỳ (Khách đang ở)</option>
+                            <option value="Tổng vệ sinh phòng">Tổng vệ sinh phòng</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Mức độ ưu tiên</label>
+                        <select name="priority" class="form-select">
+                            <option value="Gấp">Gấp (Khách sắp nhận phòng)</option>
+                            <option value="Cao">Cao</option>
+                            <option value="Bình thường" selected>Bình thường</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Ghi chú công việc</label>
+                        <textarea name="notes" class="form-control" rows="3" placeholder="VD: Thay mới chăn ga, bổ sung nước suối..."></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="@Url.Action("Index")" class="btn btn-outline-secondary">Hủy</a>
+                        <button type="submit" class="btn btn-danger px-4 fw-semibold">Tạo phiếu dọn phòng</button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

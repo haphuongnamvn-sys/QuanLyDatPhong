@@ -1,0 +1,105 @@
+@model IEnumerable<QuanLyLuuTru.Models.UserAccount>
+@{
+    ViewBag.Title = "Quản lý tài khoản";
+}
+
+<div class="page-header-box">
+    <div>
+        <h1 class="page-title">Quản lý Tài khoản &amp; Phân quyền</h1>
+        <p class="page-subtitle">Quản lý danh sách tài khoản Quản trị viên, Nhân viên và Khách hàng trong hệ thống.</p>
+    </div>
+    <div>
+        <a href="@Url.Action("CreateUser")" class="btn btn-danger btn-sm fw-semibold">+ Thêm tài khoản mới</a>
+    </div>
+</div>
+
+<!-- Bộ lọc tìm kiếm -->
+<div class="card-custom mb-3">
+    <div class="card-custom-body py-3">
+        @using (Html.BeginForm("Users", "Account", FormMethod.Get, new { @class = "row g-2 align-items-end" }))
+        {
+            <div class="col-md-5">
+                <label class="form-label small fw-bold mb-1">Tìm theo Tên đăng nhập / Họ tên / SĐT</label>
+                <input type="text" name="keyword" class="form-control form-control-sm" value="@ViewBag.Keyword" placeholder="Nhập từ khóa..." />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-bold mb-1">Lọc theo Vai trò</label>
+                <select name="roleFilter" class="form-select form-select-sm">
+                    <option value="">-- Tất cả vai trò --</option>
+                    <option value="Admin" @(ViewBag.SelectedRole == "Admin" ? "selected" : "")>Quản trị viên</option>
+                    <option value="Staff" @(ViewBag.SelectedRole == "Staff" ? "selected" : "")>Nhân viên</option>
+                    <option value="Customer" @(ViewBag.SelectedRole == "Customer" ? "selected" : "")>Khách hàng</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-center gap-2">
+                <button type="submit" class="btn btn-sm btn-danger px-3 fw-semibold" style="white-space: nowrap;">Tìm kiếm</button>
+                <a href="@Url.Action("Users")" class="btn btn-sm btn-outline-secondary px-3" style="white-space: nowrap;">Tất cả</a>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Bảng danh sách tài khoản -->
+<div class="card-custom">
+    <div class="card-custom-header">
+        <span>Danh sách tài khoản (@Model.Count() tài khoản)</span>
+    </div>
+    <div class="card-custom-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th class="ps-3">ID</th>
+                        <th>Tên đăng nhập</th>
+                        <th>Họ và tên</th>
+                        <th>Số điện thoại</th>
+                        <th>Email</th>
+                        <th>Phân quyền</th>
+                        <th>Tình trạng</th>
+                        <th class="text-end pe-3">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="ps-3 text-muted">#@item.Id</td>
+                            <td class="fw-bold">@item.Username</td>
+                            <td class="fw-semibold">@item.FullName</td>
+                            <td>@item.Phone</td>
+                            <td class="small text-muted">@item.Email</td>
+                            <td style="white-space:nowrap;">
+                                <span class="badge-status @item.RoleBadgeClass">@item.RoleText</span>
+                            </td>
+                            <td style="white-space:nowrap;">
+                                @if (item.IsActive)
+                                {
+                                    <span class="badge-status badge-available">Hoạt động</span>
+                                }
+                                else
+                                {
+                                    <span class="badge-status badge-maintenance">Đã khóa</span>
+                                }
+                            </td>
+                            <td class="text-end pe-3" style="white-space:nowrap;">
+                                <a href="@Url.Action("EditUser", new { id = item.Id })" class="btn btn-sm btn-outline-primary">Sửa / Phân quyền</a>
+                                @using (Html.BeginForm("ToggleLock", "Account", new { id = item.Id }, FormMethod.Post, new { style = "display:inline;" }))
+                                {
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-warning">
+                                        @(item.IsActive ? "Khóa" : "Mở khóa")
+                                    </button>
+                                }
+                                @using (Html.BeginForm("DeleteUser", "Account", new { id = item.Id }, FormMethod.Post, new { style = "display:inline;" }))
+                                {
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Xóa tài khoản @item.Username?');">Xóa</button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

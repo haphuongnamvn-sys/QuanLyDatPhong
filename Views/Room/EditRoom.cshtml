@@ -1,0 +1,118 @@
+@model QuanLyLuuTru.Models.Room
+@{
+    ViewBag.Title = "Cập nhật Phòng " + Model.RoomNumber;
+    bool isAdmin = ViewBag.IsAdmin == true;
+}
+
+<div class="card-custom" style="max-width: 720px; margin: 0 auto;">
+    <div class="card-custom-header">
+        <span>&#9998; Cập nhật Thông tin &amp; Giá Phòng: @Model.RoomNumber</span>
+        <a href="@Url.Action("Index")" class="btn btn-sm btn-outline-secondary">&larr; Quay lại</a>
+    </div>
+    <div class="card-custom-body">
+        @using (Html.BeginForm())
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.Id)
+            @Html.ValidationSummary(false, "", new { @class = "alert alert-danger small" })
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Số phòng (*)</label>
+                    @if (isAdmin)
+                    {
+                        @Html.TextBoxFor(m => m.RoomNumber, new { @class = "form-control", required = "required" })
+                    }
+                    else
+                    {
+                        @Html.TextBoxFor(m => m.RoomNumber, new { @class = "form-control bg-light", @readonly = "readonly" })
+                    }
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Tầng (*)</label>
+                    @if (isAdmin)
+                    {
+                        @Html.TextBoxFor(m => m.Floor, new { @class = "form-control", type = "number", min = "1", max = "10", required = "required" })
+                    }
+                    else
+                    {
+                        @Html.TextBoxFor(m => m.Floor, new { @class = "form-control bg-light", @readonly = "readonly" })
+                    }
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Danh mục Loại phòng (*)</label>
+                    @if (isAdmin)
+                    {
+                        @Html.DropDownListFor(m => m.RoomTypeId, ViewBag.RoomTypes as SelectList, new { @class = "form-select" })
+                    }
+                    else
+                    {
+                        @Html.HiddenFor(m => m.RoomTypeId)
+                        <input type="text" class="form-control bg-light" value="@Model.CategoryName" readonly />
+                    }
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Đơn giá phòng / đêm (VNĐ) (*)</label>
+                    @if (isAdmin)
+                    {
+                        <input type="number" name="PricePerNight" class="form-control fw-bold text-danger" min="0" value="@((long)Model.PricePerNight)" required />
+                    }
+                    else
+                    {
+                        @Html.HiddenFor(m => m.PricePerNight)
+                        <input type="text" class="form-control bg-light" value="@Model.PricePerNight.ToString("N0") đ" readonly />
+                    }
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Sức chứa tối đa (Khách)</label>
+                    @if (isAdmin)
+                    {
+                        @Html.TextBoxFor(m => m.MaxGuests, new { @class = "form-control", type = "number", min = "1", max = "10", required = "required" })
+                    }
+                    else
+                    {
+                        @Html.HiddenFor(m => m.MaxGuests)
+                        <input type="text" class="form-control bg-light" value="@Model.MaxGuests khách" readonly />
+                    }
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Trạng thái vận hành</label>
+                    <select name="Status" class="form-select">
+                        <option value="Available" @(Model.Status == "Available" ? "selected" : "")>Phòng trống (Sẵn sàng)</option>
+                        <option value="Occupied" @(Model.Status == "Occupied" ? "selected" : "")>Đang có khách</option>
+                        <option value="Cleaning" @(Model.Status == "Cleaning" ? "selected" : "")>Cần dọn vệ sinh</option>
+                        <option value="Maintenance" @(Model.Status == "Maintenance" ? "selected" : "")>Đang bảo trì</option>
+                    </select>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label fw-semibold">Tiện nghi trong phòng</label>
+                    @if (isAdmin)
+                    {
+                        @Html.TextBoxFor(m => m.Description, new { @class = "form-control" })
+                    }
+                    else
+                    {
+                        @Html.HiddenFor(m => m.Description)
+                        <input type="text" class="form-control bg-light" value="@Model.Description" readonly />
+                    }
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label fw-semibold">Ghi chú vận hành / Bảo trì</label>
+                    @Html.TextAreaFor(m => m.Notes, new { @class = "form-control", rows = "2" })
+                </div>
+
+                <div class="col-12 pt-3 border-top d-flex justify-content-end gap-2">
+                    <a href="@Url.Action("Index")" class="btn btn-outline-secondary">Hủy</a>
+                    <button type="submit" class="btn btn-danger px-4 fw-semibold">Lưu cập nhật</button>
+                </div>
+            </div>
+        }
+    </div>
+</div>

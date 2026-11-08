@@ -1,0 +1,57 @@
+@model QuanLyLuuTru.Models.UserAccount
+@{
+    ViewBag.Title = "Quản lý thông tin cá nhân";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card-custom">
+            <div class="card-custom-header">
+                <span>&#128100; Quản lý thông tin cá nhân</span>
+                <span class="badge-status @Model.RoleBadgeClass">Vai trò: @Model.RoleText</span>
+            </div>
+            <div class="card-custom-body">
+                @using (Html.BeginForm("Profile", "Account", FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Tên đăng nhập</label>
+                            <input type="text" class="form-control bg-light" value="@Model.Username" readonly />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Vai trò</label>
+                            <input type="text" class="form-control bg-light" value="@Model.RoleText" readonly />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Họ và tên (*)</label>
+                            <input type="text" name="FullName" class="form-control" value="@Model.FullName" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Số điện thoại (*)</label>
+                            <input type="text" name="Phone" class="form-control" value="@Model.Phone" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Số CCCD / CMND</label>
+                            <input type="text" name="IdentityCard" class="form-control" value="@Model.IdentityCard" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Email</label>
+                            <input type="email" name="Email" class="form-control" value="@Model.Email" />
+                        </div>
+                        <div class="col-12 pt-3 d-flex justify-content-between align-items-center">
+                            <a href="@Url.Action("ChangePassword", "Account")" class="btn btn-outline-primary btn-sm">
+                                &#128274; Chuyển sang trang Đổi mật khẩu
+                            </a>
+                            <div class="d-flex gap-2">
+                                <a href="@Url.Action("Index", "Home")" class="btn btn-outline-secondary">Quay lại</a>
+                                <button type="submit" class="btn btn-danger px-4 fw-semibold">Lưu thông tin</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

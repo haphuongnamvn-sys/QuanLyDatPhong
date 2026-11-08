@@ -1,0 +1,103 @@
+@model IEnumerable<QuanLyLuuTru.Models.BookingService>
+@using QuanLyLuuTru.Models
+@{
+    ViewBag.Title = "Xác nhận Dịch vụ Khách hàng đặt";
+    var bookingDict = ViewBag.BookingDict as Dictionary<int, Booking>;
+    var roomDict = ViewBag.RoomDict as Dictionary<int, Room>;
+    int pendingCount = ViewBag.PendingCount ?? 0;
+}
+
+<div class="page-header-box">
+    <div>
+        <h1 class="page-title">Xác nhận Dịch vụ Khách hàng Đặt</h1>
+        <p class="page-subtitle">Nhân viên kiểm tra và bấm <strong>Xác nhận</strong> các yêu cầu đặt thêm dịch vụ từ khách hàng (Hiện có <strong class="text-danger">@pendingCount yêu cầu chờ xác nhận</strong>).</p>
+    </div>
+</div>
+
+<div class="card-custom">
+    <div class="card-custom-header">
+        <span>Danh sách yêu cầu dịch vụ (@Model.Count() yêu cầu)</span>
+        <div class="d-flex gap-1">
+            <a href="@Url.Action("Requests", "Service")" class="btn btn-sm @(string.IsNullOrEmpty(ViewBag.SelectedStatus) ? "btn-danger" : "btn-outline-secondary")">Tất cả</a>
+            <a href="@Url.Action("Requests", "Service", new { status = "Pending" })" class="btn btn-sm @(ViewBag.SelectedStatus == "Pending" ? "btn-danger" : "btn-outline-secondary")">Chờ xác nhận (@pendingCount)</a>
+            <a href="@Url.Action("Requests", "Service", new { status = "Confirmed" })" class="btn btn-sm @(ViewBag.SelectedStatus == "Confirmed" ? "btn-danger" : "btn-outline-secondary")">Đã xác nhận</a>
+            <a href="@Url.Action("Requests", "Service", new { status = "Rejected" })" class="btn btn-sm @(ViewBag.SelectedStatus == "Rejected" ? "btn-danger" : "btn-outline-secondary")">Hết hàng</a>
+        </div>
+    </div>
+    <div class="card-custom-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th class="ps-3">Mã đơn / Phòng</th>
+                        <th>Khách hàng</th>
+                        <th>Tên dịch vụ</th>
+                        <th class="text-center">Số lượng</th>
+                        <th class="text-end">Thành tiền</th>
+                        <th>Ghi chú</th>
+                        <th>Tình trạng</th>
+                        <th class="text-end pe-3">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4">Chưa có yêu cầu dịch vụ nào trong mục này.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var item in Model)
+                        {
+                            var b = bookingDict != null && bookingDict.ContainsKey(item.BookingId) ? bookingDict[item.BookingId] : null;
+                            var r = b != null && roomDict != null && roomDict.ContainsKey(b.RoomId) ? roomDict[b.RoomId] : null;
+                            <tr>
+                                <td class="ps-3">
+                                    @if (b != null)
+                                    {
+                                        <a href="@Url.Action("Details", "Booking", new { id = b.Id })" class="fw-bold text-danger text-decoration-none">@b.BookingCode</a>
+                                    }
+                                    <div class="small text-muted">Phòng @(r != null ? r.RoomNumber : "")</div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">@(b != null ? b.CustomerName : "")</div>
+                                    <div class="small text-muted">@(b != null ? b.CustomerPhone : "")</div>
+                                </td>
+                                <td>
+                                    <div class="fw-bold text-dark">@item.ServiceName</div>
+                                    <div class="small text-muted">@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                                </td>
+                                <td class="text-center fw-semibold" style="white-space:nowrap;">@item.Quantity @item.Unit</td>
+                                <td class="text-end fw-bold text-danger" style="white-space:nowrap;">@item.TotalAmount.ToString("N0") đ</td>
+                                <td class="small text-muted">@item.Note</td>
+                                <td style="white-space:nowrap;">
+                                    <span class="badge-status @item.StatusBadgeClass">@item.StatusText</span>
+                                </td>
+                                <td class="text-end pe-3" style="white-space: nowrap;">
+                                    @if (item.Status == "Pending")
+                                    {
+                                        using (Html.BeginForm("ConfirmRequest", "Service", new { id = item.Id }, FormMethod.Post, new { style = "display:inline;" }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-success fw-semibold">&#10004; Xác nhận</button>
+                                        }
+                                        using (Html.BeginForm("RejectRequest", "Service", new { id = item.Id }, FormMethod.Post, new { style = "display:inline;" }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger ms-1" onclick="return confirm('Báo hết hàng cho dịch vụ này?');">Báo hết hàng</button>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="small text-muted">Đã xử lý</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

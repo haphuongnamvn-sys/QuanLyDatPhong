@@ -1,0 +1,90 @@
+@model QuanLyLuuTru.Models.Booking
+@using QuanLyLuuTru.Models
+@{
+    ViewBag.Title = "Trả phòng & Thanh toán - " + Model.BookingCode;
+    var room = ViewBag.Room as Room;
+    var roomType = ViewBag.RoomType as RoomType;
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card-custom">
+            <div class="card-custom-header bg-dark text-white">
+                <span>Thủ tục Trả phòng &amp; Thanh toán hóa đơn: Đơn @Model.BookingCode</span>
+                <a href="@Url.Action("Details", new { id = Model.Id })" class="btn btn-sm btn-outline-light">&larr; Quay lại</a>
+            </div>
+            <div class="card-custom-body">
+                <div class="p-3 rounded bg-light border mb-3">
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="small text-muted">Khách hàng</div>
+                            <div class="fw-bold">@Model.CustomerName (@Model.CustomerPhone)</div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="small text-muted">Phòng lưu trú</div>
+                            <div class="fw-bold text-danger">Phòng @(room != null ? room.RoomNumber : "") (@Model.TotalNights đêm)</div>
+                        </div>
+                    </div>
+                </div>
+
+                @using (Html.BeginForm("CheckOut", "Booking", FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+
+                    <div class="d-flex justify-content-between py-2 border-bottom">
+                        <span>1. Tiền phòng (@Model.TotalNights đêm):</span>
+                        <strong>@Model.RoomTotalAmount.ToString("N0") đ</strong>
+                    </div>
+                    <div class="d-flex justify-content-between py-2 border-bottom mb-3">
+                        <span>2. Tiền dịch vụ phát sinh:</span>
+                        <strong>@Model.ServiceTotalAmount.ToString("N0") đ</strong>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">3. Phụ thu trả phòng muộn / khác (VNĐ)</label>
+                            <input type="number" name="extraCharge" class="form-control" value="@((long)Model.ExtraCharge)" min="0" />
+                            @if (roomType != null)
+                            {
+                                <div class="form-text small">Định mức trả muộn: @roomType.LateCheckoutFeePerHour.ToString("N0")đ/giờ</div>
+                            }
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">4. Giảm giá / Khuyến mãi (VNĐ)</label>
+                            <input type="number" name="discountAmount" class="form-control" value="@((long)Model.DiscountAmount)" min="0" />
+                        </div>
+                    </div>
+
+                    <div class="p-3 rounded bg-warning bg-opacity-10 border mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Tổng cộng (Phòng + Dịch vụ):</span>
+                            <strong>@((Model.RoomTotalAmount + Model.ServiceTotalAmount).ToString("N0")) đ</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1 text-primary">
+                            <span>Trừ tiền khách đã đặt cọc:</span>
+                            <strong>- @Model.DepositAmount.ToString("N0") đ</strong>
+                        </div>
+                        <hr class="my-2" />
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold">SỐ TIỀN KHÁCH CẦN THANH TOÁN:</span>
+                            <strong class="text-danger fs-4">@Model.RemainingAmount.ToString("N0") đ</strong>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Ghi chú thanh toán</label>
+                        <input type="text" name="checkoutNote" class="form-control" placeholder="VD: Đã thanh toán đủ qua chuyển khoản..." />
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 pt-2">
+                        <a href="@Url.Action("Details", new { id = Model.Id })" class="btn btn-outline-secondary">Hủy</a>
+                        <button type="submit" class="btn btn-danger px-4 fw-bold">
+                            &#10004; Hoàn tất Trả phòng &amp; Chuyển dọn vệ sinh
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

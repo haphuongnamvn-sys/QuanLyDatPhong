@@ -1,0 +1,189 @@
+@model QuanLyLuuTru.Models.BusinessReportViewModel
+@{
+    int currentTab = ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage : 1;
+    string fromStr = Model.FromDate.ToString("yyyy-MM-dd");
+    string toStr = Model.ToDate.ToString("yyyy-MM-dd");
+    ViewBag.Title = "Thống kê & Doanh thu";
+}
+
+<div class="page-header-box">
+    <div>
+        <h1 class="page-title">Thống kê Doanh thu &amp; Tỷ lệ Lấp đầy Phòng</h1>
+        <p class="page-subtitle">
+            Kỳ thống kê từ <strong>@Model.FromDate.ToString("dd/MM/yyyy")</strong> đến <strong>@Model.ToDate.ToString("dd/MM/yyyy")</strong> (@Model.TotalDays ngày) &bull;
+            Tổng doanh thu: <strong class="text-danger">@Model.GrandTotalRevenue.ToString("N0") đ</strong> &bull;
+            Tỷ lệ lấp đầy trung bình: <strong class="text-primary">@Model.OverallOccupancyRate%</strong> (@Model.TotalOccupiedNights/@Model.TotalCapacityNights đêm)
+        </p>
+    </div>
+    <div>
+        @using (Html.BeginForm("Index", "Report", FormMethod.Get, new { @class = "d-flex align-items-center gap-2 flex-wrap" }))
+        {
+            <input type="hidden" name="page" value="@currentTab" />
+            <span class="small fw-bold">Từ ngày:</span>
+            <input type="date" name="fromDate" class="form-control form-control-sm" style="width:140px;" value="@fromStr" />
+            <span class="small fw-bold">Đến:</span>
+            <input type="date" name="toDate" class="form-control form-control-sm" style="width:140px;" value="@toStr" />
+            <button type="submit" class="btn btn-sm btn-danger fw-semibold">Thống kê</button>
+        }
+    </div>
+</div>
+
+<!-- Thanh chuyển Tab ngang giống kiểu Menu -->
+<div class="card-custom">
+    <div class="border-bottom px-2 py-1 bg-white" style="border-radius: 10px 10px 0 0;">
+        <ul class="nav-menu-list px-2 py-1 m-0">
+            <li class="nav-menu-item">
+                <a href="@Url.Action("Index", "Report", new { fromDate = fromStr, toDate = toStr, page = 1 })"
+                   class="@(currentTab == 1 ? "active" : "")">
+                    Thống kê theo từng Phòng
+                </a>
+            </li>
+            <li class="nav-menu-item">
+                <a href="@Url.Action("Index", "Report", new { fromDate = fromStr, toDate = toStr, page = 2 })"
+                   class="@(currentTab == 2 ? "active" : "")">
+                    Thống kê theo Loại phòng
+                </a>
+            </li>
+            <li class="nav-menu-item">
+                <a href="@Url.Action("Index", "Report", new { fromDate = fromStr, toDate = toStr, page = 3 })"
+                   class="@(currentTab == 3 ? "active" : "")">
+                    Doanh thu Dịch vụ phát sinh
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="card-custom-body p-0">
+        @if (currentTab == 1)
+        {
+            <!-- TAB 1: THỐNG KÊ THEO TỪNG PHÒNG -->
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead>
+                        <tr>
+                            <th class="ps-3">Số phòng</th>
+                            <th>Loại phòng</th>
+                            <th>Trạng thái hiện tại</th>
+                            <th class="text-center">Số đêm có khách / Tổng số ngày</th>
+                            <th style="width: 240px;">Tỷ lệ lấp đầy (%)</th>
+                            <th class="text-end pe-3">Doanh thu phòng</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in Model.RoomOccupancies)
+                        {
+                            <tr>
+                                <td class="ps-3 fw-bold">Phòng @r.RoomNumber</td>
+                                <td>@r.RoomTypeName</td>
+                                <td>@r.CurrentStatusText</td>
+                                <td class="text-center">@r.OccupiedNights / @r.TotalDaysInPeriod đêm</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="height: 10px;">
+                                            <div class="progress-bar bg-danger" role="progressbar" style="width: @(Math.Min(100, r.OccupancyRate))%;"></div>
+                                        </div>
+                                        <strong class="small" style="min-width: 45px;">@r.OccupancyRate%</strong>
+                                    </div>
+                                </td>
+                                <td class="text-end pe-3 fw-bold text-danger">@r.Revenue.ToString("N0") đ</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot class="table-light fw-bold">
+                        <tr>
+                            <td colspan="3" class="ps-3">TỔNG CỘNG TOÀN CƠ SỞ (@Model.CompletedOrActiveBookings đơn hợp lệ)</td>
+                            <td class="text-center">@Model.TotalOccupiedNights / @Model.TotalCapacityNights đêm</td>
+                            <td>Trung bình: @Model.OverallOccupancyRate%</td>
+                            <td class="text-end pe-3 text-danger fs-6">@Model.GrandTotalRevenue.ToString("N0") đ</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        }
+        else if (currentTab == 2)
+        {
+            <!-- TAB 2: TỔNG HỢP THEO LOẠI PHÒNG -->
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead>
+                        <tr>
+                            <th class="ps-3">Loại phòng</th>
+                            <th class="text-center">Số phòng</th>
+                            <th class="text-center">Số đơn đặt</th>
+                            <th class="text-center">Tỷ lệ lấp đầy</th>
+                            <th class="text-end">Doanh thu tiền phòng</th>
+                            <th class="text-end">Doanh thu dịch vụ</th>
+                            <th class="text-end pe-3">Tổng doanh thu</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.RoomTypeReports)
+                        {
+                            <tr>
+                                <td class="ps-3 fw-bold">@item.RoomTypeName</td>
+                                <td class="text-center">@item.RoomCount phòng</td>
+                                <td class="text-center">@item.BookingCount đơn</td>
+                                <td class="text-center fw-semibold">@item.OccupancyRate% (@item.OccupiedRoomNights/@item.TotalAvailableRoomNights đêm)</td>
+                                <td class="text-end">@item.RoomRevenue.ToString("N0") đ</td>
+                                <td class="text-end">@item.ServiceRevenue.ToString("N0") đ</td>
+                                <td class="text-end pe-3 fw-bold text-danger">@item.TotalRevenue.ToString("N0") đ</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot class="table-light fw-bold">
+                        <tr>
+                            <td colspan="4" class="ps-3">TỔNG CỘNG</td>
+                            <td class="text-end text-primary">@Model.RoomTypeReports.Sum(x => x.RoomRevenue).ToString("N0") đ</td>
+                            <td class="text-end text-success">@Model.TotalServiceRevenue.ToString("N0") đ</td>
+                            <td class="text-end pe-3 text-danger fs-6">@Model.GrandTotalRevenue.ToString("N0") đ</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        }
+        else
+        {
+            <!-- TAB 3: DOANH THU DỊCH VỤ PHÁT SINH -->
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead>
+                        <tr>
+                            <th class="ps-3">Tên dịch vụ</th>
+                            <th>Nhóm dịch vụ</th>
+                            <th class="text-center">Đơn vị tính</th>
+                            <th class="text-center">Tổng số lượng đã phục vụ</th>
+                            <th class="text-end pe-3">Tổng thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.TopServices.Any())
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">Chưa có dịch vụ phát sinh nào trong khoảng thời gian này.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var s in Model.TopServices)
+                            {
+                                <tr>
+                                    <td class="ps-3 fw-bold">@s.ServiceName</td>
+                                    <td>@s.Category</td>
+                                    <td class="text-center">@s.Unit</td>
+                                    <td class="text-center fw-semibold">@s.TotalQuantity @s.Unit</td>
+                                    <td class="text-end pe-3 fw-bold text-success">@s.TotalRevenue.ToString("N0") đ</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                    <tfoot class="table-light fw-bold">
+                        <tr>
+                            <td colspan="4" class="ps-3">TỔNG DOANH THU DỊCH VỤ PHÁT SINH</td>
+                            <td class="text-end pe-3 text-success fs-6">@Model.TotalServiceRevenue.ToString("N0") đ</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        }
+    </div>
+</div>

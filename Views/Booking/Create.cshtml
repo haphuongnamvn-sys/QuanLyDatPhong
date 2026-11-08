@@ -1,0 +1,174 @@
+@model QuanLyLuuTru.Models.Booking
+@using QuanLyLuuTru.Models
+@{
+    var selectedRoom = ViewBag.SelectedRoom as Room;
+    var selectedRoomType = ViewBag.SelectedRoomType as RoomType;
+    string roomNumber = selectedRoom != null ? selectedRoom.RoomNumber : "";
+    string categoryName = selectedRoom != null && !string.IsNullOrEmpty(selectedRoom.CategoryName)
+        ? selectedRoom.CategoryName
+        : (selectedRoomType != null ? selectedRoomType.Name : "Phòng lưu trú");
+    decimal pricePerNight = selectedRoom != null && selectedRoom.PricePerNight > 0
+        ? selectedRoom.PricePerNight
+        : (selectedRoomType != null ? selectedRoomType.BasePrice : 300000);
+    int maxGuests = selectedRoom != null && selectedRoom.MaxGuests > 0
+        ? selectedRoom.MaxGuests
+        : (selectedRoomType != null ? selectedRoomType.MaxGuests : 2);
+    string description = selectedRoom != null && !string.IsNullOrEmpty(selectedRoom.Description)
+        ? selectedRoom.Description
+        : (selectedRoomType != null ? selectedRoomType.Description : "");
+
+    ViewBag.Title = "Đặt phòng " + roomNumber;
+    bool isStaffOrAdmin = ViewBag.IsStaffOrAdmin == true;
+}
+
+<div class="card-custom" style="max-width: 780px; margin: 0 auto;">
+    <div class="card-custom-header">
+        <span>Phiếu Đặt phòng &mdash; Phòng @roomNumber (@categoryName)</span>
+        <a href="@Url.Action("RoomDetail", "Home", new { id = Model.RoomId })" class="btn btn-outline-secondary btn-sm">&larr; Quay lại</a>
+    </div>
+    <div class="card-custom-body">
+        @using (Html.BeginForm("Create", "Booking", FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.RoomId)
+            @Html.ValidationSummary(false, "", new { @class = "alert alert-danger small" })
+
+            <!-- Thông tin phòng đang đặt (Cố định theo phòng đã bấm chọn) -->
+            <div class="p-3 rounded bg-light border mb-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-bold text-dark fs-5">Phòng @roomNumber &mdash; @categoryName</div>
+                        <div class="small text-muted mt-1">
+                            Tầng @(selectedRoom != null ? selectedRoom.Floor : 1) &bull; Tối đa @maxGuests khách &bull; @description
+                        </div>
+                    </div>
+                    <div class="text-end mt-2 mt-sm-0">
+                        <div class="small text-muted">Đơn giá phòng</div>
+                        <div class="fs-5 fw-bold text-danger">@pricePerNight.ToString("N0") đ / đêm</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thời gian nhận phòng, trả phòng & Thông tin khách hàng trong cùng 1 form liền mạch -->
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Ngày nhận phòng (*)</label>
+                    <input type="date" name="CheckInDate" id="txtCheckIn" class="form-control" value="@Model.CheckInDate.ToString("yyyy-MM-dd")" required />
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Ngày trả phòng (*)</label>
+                    <input type="date" name="CheckOutDate" id="txtCheckOut" class="form-control" value="@Model.CheckOutDate.ToString("yyyy-MM-dd")" required />
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Số lượng khách (*)</label>
+                    @Html.TextBoxFor(m => m.GuestCount, new { @class = "form-control", type = "number", min = "1", max = maxGuests, required = "required" })
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Họ và tên khách hàng (*)</label>
+                    @Html.TextBoxFor(m => m.CustomerName, new { @class = "form-control", placeholder = "Nhập họ và tên người đặt...", required = "required" })
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Số điện thoại liên hệ (*)</label>
+                    @Html.TextBoxFor(m => m.CustomerPhone, new { @class = "form-control", placeholder = "Nhập số điện thoại...", required = "required" })
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Số CCCD / CMND</label>
+                    @Html.TextBoxFor(m => m.CustomerIdentityCard, new { @class = "form-control", placeholder = "Nhập số CCCD..." })
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Ghi chú yêu cầu thêm</label>
+                    @Html.TextBoxFor(m => m.Notes, new { @class = "form-control", placeholder = "VD: Nhận phòng buổi chiều..." })
+                </div>
+
+                <!-- Giá phòng, tổng tiền & tiền đặt cọc -->
+                <div class="col-12 mt-4">
+                    <div class="p-3 rounded bg-light border">
+                        <div class="d-flex justify-content-between py-1">
+                            <span>Đơn giá phòng:</span>
+                            <strong>@pricePerNight.ToString("N0") đ / đêm</strong>
+                        </div>
+                        <div class="d-flex justify-content-between py-1">
+                            <span>Số đêm lưu trú:</span>
+                            <strong id="lblNights">@Model.TotalNights đêm</strong>
+                        </div>
+                        <div class="d-flex justify-content-between py-2 border-top mt-1">
+                            <span class="fw-bold text-dark">Tổng tiền phòng:</span>
+                            <strong class="text-danger fs-5" id="lblTotal">@Model.RoomTotalAmount.ToString("N0") đ</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-bold text-dark">Số tiền đặt cọc trước (VNĐ) (*)</label>
+                    <input type="number" name="DepositAmount" id="txtDeposit" class="form-control fw-bold text-danger" min="0" value="@((long)Model.DepositAmount)" required />
+                    <div class="form-text small">Đặt cọc tối thiểu 30% tiền phòng để giữ lịch phòng.</div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Hình thức thanh toán tiền cọc</label>
+                    <select name="depositMethod" class="form-select">
+                        <option value="Chuyển khoản ngân hàng">Chuyển khoản Ngân hàng (VietQR)</option>
+                        <option value="Ví điện tử MoMo / VNPay">Ví điện tử MoMo / VNPay</option>
+                        <option value="Tiền mặt tại quầy lễ tân">Tiền mặt tại quầy lễ tân</option>
+                    </select>
+                </div>
+
+                @if (isStaffOrAdmin)
+                {
+                    <div class="col-12">
+                        <div class="form-check p-2 rounded bg-light border">
+                            <input class="form-check-input ms-0 me-2" type="checkbox" name="checkInNow" value="true" id="chkCheckInNow" />
+                            <label class="form-check-label fw-semibold text-dark" for="chkCheckInNow">
+                                Khách nhận phòng ở ngay tại quầy lễ tân (Check-in trực tiếp)
+                            </label>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                <a href="@Url.Action("RoomDetail", "Home", new { id = Model.RoomId })" class="btn btn-outline-secondary">Hủy bỏ</a>
+                <button type="submit" class="btn btn-danger px-4 fw-bold">
+                    &#10004; Xác nhận Đặt phòng @roomNumber
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        (function () {
+            var pricePerNight = @((int)pricePerNight);
+            var txtCheckIn = document.getElementById('txtCheckIn');
+            var txtCheckOut = document.getElementById('txtCheckOut');
+            var lblNights = document.getElementById('lblNights');
+            var lblTotal = document.getElementById('lblTotal');
+            var txtDeposit = document.getElementById('txtDeposit');
+
+            function recalc() {
+                if (!txtCheckIn.value || !txtCheckOut.value) return;
+                var d1 = new Date(txtCheckIn.value);
+                var d2 = new Date(txtCheckOut.value);
+                var diffDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+                if (diffDays <= 0) diffDays = 1;
+                var total = diffDays * pricePerNight;
+                var deposit = Math.round(total * 0.3);
+                lblNights.innerText = diffDays + ' đêm';
+                lblTotal.innerText = total.toLocaleString('vi-VN') + ' đ';
+                txtDeposit.value = deposit;
+            }
+
+            if (txtCheckIn && txtCheckOut) {
+                txtCheckIn.addEventListener('change', recalc);
+                txtCheckOut.addEventListener('change', recalc);
+            }
+        })();
+    </script>
+}

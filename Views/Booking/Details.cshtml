@@ -1,0 +1,197 @@
+@model QuanLyLuuTru.Models.Booking
+@using QuanLyLuuTru.Models
+@{
+    ViewBag.Title = "Chi tiết đơn đặt phòng " + Model.BookingCode;
+    var room = ViewBag.Room as Room;
+    var roomType = ViewBag.RoomType as RoomType;
+    var usedServices = ViewBag.UsedServices as List<BookingService>;
+    bool isStaffOrAdmin = ViewBag.IsStaffOrAdmin == true;
+    decimal remaining = Model.RemainingAmount > 0 ? Model.RemainingAmount : 0;
+}
+
+<div class="card-custom" style="max-width: 840px; margin: 0 auto;">
+    <div class="card-custom-header">
+        <div class="d-flex align-items-center gap-2">
+            <span>Chi tiết đơn đặt phòng: <strong class="text-danger">@Model.BookingCode</strong></span>
+            <span class="badge-status @Model.StatusBadgeClass">@Model.StatusText</span>
+        </div>
+        <span class="small text-muted fw-normal">Ngày đặt: @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+    </div>
+
+    <div class="card-custom-body">
+        <!-- 1. Thông tin phòng & khách hàng đặt -->
+        <table class="table table-bordered mb-4">
+            <tbody>
+                <tr>
+                    <th style="width: 30%;">Phòng lưu trú</th>
+                    <td class="fw-bold text-danger">
+                        Phòng @(room != null ? room.RoomNumber : "#" + Model.RoomId)
+                        <span class="text-dark fw-normal">(@(roomType != null ? roomType.Name : ""))</span>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Khách hàng đặt</th>
+                    <td><strong>@Model.CustomerName</strong> &bull; SĐT: @Model.CustomerPhone &bull; CCCD: @(string.IsNullOrEmpty(Model.CustomerIdentityCard) ? "---" : Model.CustomerIdentityCard) (@Model.GuestCount khách)</td>
+                </tr>
+                <tr>
+                    <th>Thời gian nhận &rarr; trả phòng</th>
+                    <td>
+                        <strong>@Model.CheckInDate.ToString("dd/MM/yyyy") &rarr; @Model.CheckOutDate.ToString("dd/MM/yyyy")</strong> (@Model.TotalNights đêm)
+                    </td>
+                </tr>
+                <tr>
+                    <th>Giờ nhận / trả phòng thực tế</th>
+                    <td>
+                        Nhận phòng: <strong class="text-success">@(Model.ActualCheckIn.HasValue ? Model.ActualCheckIn.Value.ToString("HH:mm dd/MM/yyyy") : "Chưa nhận phòng")</strong>
+                        &bull;
+                        Trả phòng: <strong class="text-primary">@(Model.ActualCheckOut.HasValue ? Model.ActualCheckOut.Value.ToString("HH:mm dd/MM/yyyy") : "Chưa trả phòng")</strong>
+                    </td>
+                </tr>
+                @if (!string.IsNullOrEmpty(Model.Notes))
+                {
+                    <tr>
+                        <th>Ghi chú đơn</th>
+                        <td>@Model.Notes</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <!-- 2. Danh sách dịch vụ phát sinh (Nút Đặt thêm / Quản lý dịch vụ đặt ngay tại tiêu đề mục này) -->
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="fw-bold text-dark mb-0">Dịch vụ phát sinh đã đặt</h6>
+            @if (Model.Status == "Booked" || Model.Status == "CheckedIn")
+            {
+                <a href="@Url.Action("AddService", new { id = Model.Id })" class="btn btn-sm btn-outline-danger fw-semibold">
+                    @(isStaffOrAdmin ? "+ Thêm / Xác nhận dịch vụ" : "+ Đặt thêm dịch vụ")
+                </a>
+            }
+        </div>
+
+        <div class="table-responsive mb-4">
+            <table class="table table-bordered table-hover mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th>Tên dịch vụ</th>
+                        <th class="text-center">Số lượng</th>
+                        <th class="text-end">Thành tiền</th>
+                        <th>Tình trạng</th>
+                        @if (isStaffOrAdmin)
+                        {
+                            <th class="text-end">Thao tác</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (usedServices == null || !usedServices.Any())
+                    {
+                        <tr>
+                            <td colspan="@(isStaffOrAdmin ? 5 : 4)" class="text-center text-muted py-3">Chưa có dịch vụ phát sinh nào.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var bs in usedServices)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@bs.ServiceName</div>
+                                    <div class="small text-muted">@bs.CreatedAt.ToString("dd/MM HH:mm") @(!string.IsNullOrEmpty(bs.Note) ? " - " + bs.Note : "")</div>
+                                </td>
+                                <td class="text-center" style="white-space:nowrap;">@bs.Quantity @bs.Unit</td>
+                                <td class="text-end fw-bold" style="white-space:nowrap;">@bs.TotalAmount.ToString("N0") đ</td>
+                                <td style="white-space:nowrap;">
+                                    <span class="badge-status @bs.StatusBadgeClass">@bs.StatusText</span>
+                                </td>
+                                @if (isStaffOrAdmin)
+                                {
+                                    <td class="text-end" style="white-space: nowrap;">
+                                        @if (bs.Status == "Pending")
+                                        {
+                                            using (Html.BeginForm("ConfirmRequest", "Service", new { id = bs.Id, returnUrl = Url.Action("Details", "Booking", new { id = Model.Id }) }, FormMethod.Post, new { style = "display:inline;" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-success fw-semibold">&#10004; Xác nhận</button>
+                                            }
+                                            using (Html.BeginForm("RejectRequest", "Service", new { id = bs.Id, returnUrl = Url.Action("Details", "Booking", new { id = Model.Id }) }, FormMethod.Post, new { style = "display:inline;" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-outline-danger ms-1">Báo hết hàng</button>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="small text-muted">---</span>
+                                        }
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 3. Tổng hợp chi phí & Tiền đặt cọc -->
+        <div class="p-3 rounded bg-light border mb-4">
+            <div class="d-flex justify-content-between py-1">
+                <span>Tiền phòng (@Model.TotalNights đêm):</span>
+                <strong>@Model.RoomTotalAmount.ToString("N0") đ</strong>
+            </div>
+            <div class="d-flex justify-content-between py-1">
+                <span>Tiền dịch vụ (Đã xác nhận):</span>
+                <strong>@Model.ServiceTotalAmount.ToString("N0") đ</strong>
+            </div>
+            @if (Model.ExtraCharge > 0 || Model.DiscountAmount > 0)
+            {
+                <div class="d-flex justify-content-between py-1">
+                    <span>Phụ thu / Giảm giá:</span>
+                    <strong>+@Model.ExtraCharge.ToString("N0") đ / -@Model.DiscountAmount.ToString("N0") đ</strong>
+                </div>
+            }
+            <div class="d-flex justify-content-between py-2 border-top mt-1">
+                <span class="fw-bold text-dark">Tổng chi phí:</span>
+                <strong class="text-danger fs-5">@Model.FinalTotal.ToString("N0") đ</strong>
+            </div>
+            <div class="d-flex justify-content-between py-1">
+                <span>Tiền khách đã đặt cọc:</span>
+                <strong class="text-primary">- @Model.DepositAmount.ToString("N0") đ</strong>
+            </div>
+            <div class="d-flex justify-content-between py-2 border-top mt-1">
+                <span class="fw-bold text-dark">Số tiền còn phải thanh toán:</span>
+                <strong class="text-danger fs-5">@remaining.ToString("N0") đ</strong>
+            </div>
+        </div>
+
+        <!-- 4. Thanh nút thao tác gọn gàng trên 1 hàng (Trái: Quay lại | Phải: Các nút xử lý chính) -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 pt-3 border-top">
+            <a href="@Url.Action(isStaffOrAdmin ? "Index" : "MyBookings")" class="btn btn-sm btn-outline-secondary px-3">
+                &larr; Quay lại danh sách
+            </a>
+
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                @if ((isStaffOrAdmin && (Model.Status == "Booked" || Model.Status == "CheckedIn")) || (!isStaffOrAdmin && Model.Status == "Booked"))
+                {
+                    <a href="@Url.Action("Cancel", new { id = Model.Id })" class="btn btn-sm btn-outline-danger px-3">Hủy đơn</a>
+                    <a href="@Url.Action("Edit", new { id = Model.Id })" class="btn btn-sm btn-outline-primary px-3">Đổi ngày / Đổi phòng</a>
+                }
+
+                @if (isStaffOrAdmin && Model.Status == "Booked")
+                {
+                    using (Html.BeginForm("CheckIn", "Booking", new { id = Model.Id }, FormMethod.Post, new { style = "display:inline;" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-sm btn-success px-3 fw-semibold">&#10004; Xác nhận Nhận phòng</button>
+                    }
+                }
+
+                @if (isStaffOrAdmin && Model.Status == "CheckedIn")
+                {
+                    <a href="@Url.Action("CheckOut", new { id = Model.Id })" class="btn btn-sm btn-danger px-3 fw-bold">
+                        &#10004; Trả phòng &amp; Thanh toán
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+</div>

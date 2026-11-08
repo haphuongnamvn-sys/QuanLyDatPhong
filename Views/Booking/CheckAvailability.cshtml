@@ -1,0 +1,128 @@
+@model IEnumerable<QuanLyLuuTru.Models.RoomAvailabilityResult>
+@{
+    ViewBag.Title = "Kiểm tra tình trạng phòng theo khoảng thời gian";
+    var roomTypes = ViewBag.RoomTypes as List<QuanLyLuuTru.Models.RoomType>;
+    int availableCount = Model.Count(x => x.IsAvailable);
+    int conflictCount = Model.Count(x => !x.IsAvailable);
+}
+
+<div class="page-header-box">
+    <div>
+        <h1 class="page-title">Kiểm tra Tình trạng Phòng theo Khoảng Thời Gian</h1>
+        <p class="page-subtitle">Tra cứu phòng trống từ <strong>@ViewBag.CheckIn</strong> đến <strong>@ViewBag.CheckOut</strong> (@ViewBag.Nights đêm) và ngăn chặn đặt phòng trùng lịch.</p>
+    </div>
+    <div>
+        <a href="@Url.Action("Index")" class="btn btn-outline-secondary btn-sm">Danh sách đơn đặt phòng</a>
+    </div>
+</div>
+
+<!-- Bộ lọc khoảng thời gian -->
+<div class="card-custom mb-4">
+    <div class="card-custom-header">
+        <span>&#128269; Chọn khoảng thời gian lưu trú cần kiểm tra</span>
+    </div>
+    <div class="card-custom-body">
+        @using (Html.BeginForm("CheckAvailability", "Booking", FormMethod.Get, new { @class = "row g-3 align-items-end" }))
+        {
+            <div class="col-md-3">
+                <label class="form-label small fw-bold mb-1">Ngày nhận phòng (Check-in)</label>
+                <input type="date" name="checkIn" class="form-control form-control-sm" value="@ViewBag.CheckIn" required />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold mb-1">Ngày trả phòng (Check-out)</label>
+                <input type="date" name="checkOut" class="form-control form-control-sm" value="@ViewBag.CheckOut" required />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold mb-1">Loại phòng</label>
+                <select name="roomTypeId" class="form-select form-select-sm">
+                    <option value="">-- Tất cả loại phòng --</option>
+                    @foreach (var rt in roomTypes)
+                    {
+                        <option value="@rt.Id" @(ViewBag.SelectedRoomTypeId == rt.Id ? "selected" : "")>
+                            @rt.Name (@rt.BasePrice.ToString("N0")đ)
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-center gap-2">
+                <button type="submit" class="btn btn-sm btn-danger px-3 fw-semibold" style="white-space: nowrap;">Kiểm tra</button>
+                <a href="@Url.Action("CheckAvailability")" class="btn btn-sm btn-outline-secondary px-3" style="white-space: nowrap;">Mặc định</a>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Kết quả kiểm tra -->
+<div class="card-custom">
+    <div class="card-custom-header">
+        <span>Kết quả kiểm tra (@ViewBag.Nights đêm): Có <strong class="text-success">@availableCount phòng trống</strong> và <strong class="text-danger">@conflictCount phòng vướng lịch/bảo trì</strong></span>
+    </div>
+    <div class="card-custom-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-3">Số phòng</th>
+                        <th>Hạng phòng &amp; Tiện nghi</th>
+                        <th>Sức chứa</th>
+                        <th>Đơn giá chuẩn</th>
+                        <th>Tổng tiền dự kiến (@ViewBag.Nights đêm)</th>
+                        <th>Tình trạng trong khoảng thời gian</th>
+                        <th class="text-end pe-3">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr class="@(item.IsAvailable ? "" : "table-light")">
+                            <td class="ps-3">
+                                <span class="fw-bold fs-6">@item.Room.RoomNumber</span>
+                                <div class="small text-muted">Tầng @item.Room.Floor</div>
+                            </td>
+                            <td>
+                                <div class="fw-semibold">@(item.RoomType != null ? item.RoomType.Name : "")</div>
+                                <div class="small text-muted">@(item.RoomType != null ? item.RoomType.Description : "")</div>
+                            </td>
+                            <td>@(item.RoomType != null ? item.RoomType.MaxGuests : 2) khách</td>
+                            <td class="small">
+                                Ngày thường: <strong>@(item.RoomType != null ? item.RoomType.BasePrice.ToString("N0") : "0")đ</strong><br />
+                                Cuối tuần: <span class="text-primary">@(item.RoomType != null ? item.RoomType.WeekendPrice.ToString("N0") : "0")đ</span>
+                            </td>
+                            <td class="fw-bold text-danger">@item.EstimatedRoomCharge.ToString("N0") đ</td>
+                            <td>
+                                @if (item.IsAvailable)
+                                {
+                                    <span class="badge-status badge-available">&#10004; Khả dụng (Có thể đặt)</span>
+                                    <div class="small text-muted mt-1">@item.ConflictReason</div>
+                                }
+                                else
+                                {
+                                    <span class="badge-status badge-occupied">&#10008; Không khả dụng</span>
+                                    <div class="small text-danger fw-semibold mt-1">@item.ConflictReason</div>
+                                }
+                            </td>
+                            <td class="text-end pe-3" style="white-space:nowrap;">
+                                @if (item.IsAvailable)
+                                {
+                                    <a href="@Url.Action("Create", "Booking", new { roomId = item.Room.Id, checkIn = ViewBag.CheckIn, checkOut = ViewBag.CheckOut })" class="btn btn-sm btn-danger fw-semibold">
+                                        + Đặt phòng này
+                                    </a>
+                                }
+                                else if (item.ConflictingBooking != null)
+                                {
+                                    <a href="@Url.Action("Details", "Booking", new { id = item.ConflictingBooking.Id })" class="btn btn-sm btn-outline-secondary">
+                                        Xem đơn @item.ConflictingBooking.BookingCode
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">Đang bảo trì</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

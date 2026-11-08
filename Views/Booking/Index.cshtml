@@ -1,0 +1,115 @@
+@model IEnumerable<QuanLyLuuTru.Models.Booking>
+@{
+    ViewBag.Title = "Quản lý Đặt phòng, Nhận phòng & Trả phòng";
+    var roomDict = ViewBag.RoomDict as Dictionary<int, QuanLyLuuTru.Models.Room>;
+    var rtDict = ViewBag.RoomTypeDict as Dictionary<int, QuanLyLuuTru.Models.RoomType>;
+}
+
+<div class="page-header-box">
+    <div>
+        <h1 class="page-title">Quản lý Yêu cầu Đặt phòng, Nhận phòng &amp; Trả phòng</h1>
+        <p class="page-subtitle">Theo dõi toàn bộ phiếu đặt phòng, xác nhận nhận phòng (Check-in), trả phòng (Check-out), thay đổi lịch hoặc hủy đặt phòng.</p>
+    </div>
+    <div>
+        <a href="@Url.Action("Index", "Room")" class="btn btn-danger btn-sm fw-semibold">+ Chọn phòng để Đặt phòng mới</a>
+    </div>
+</div>
+
+<!-- Bộ lọc tìm kiếm -->
+<div class="card-custom mb-3">
+    <div class="card-custom-body py-3">
+        @using (Html.BeginForm("Index", "Booking", FormMethod.Get, new { @class = "row g-2 align-items-end" }))
+        {
+            <div class="col-md-5">
+                <label class="form-label small fw-bold mb-1">Tìm theo Mã đơn / Họ tên khách / SĐT</label>
+                <input type="text" name="keyword" class="form-control form-control-sm" value="@ViewBag.Keyword" placeholder="Nhập mã DP001, tên khách hàng hoặc số điện thoại..." />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-bold mb-1">Lọc theo Tình trạng</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">-- Tất cả (@Model.Count()) --</option>
+                    <option value="Booked" @(ViewBag.SelectedStatus == "Booked" ? "selected" : "")>Chờ nhận phòng</option>
+                    <option value="CheckedIn" @(ViewBag.SelectedStatus == "CheckedIn" ? "selected" : "")>Đang lưu trú</option>
+                    <option value="CheckedOut" @(ViewBag.SelectedStatus == "CheckedOut" ? "selected" : "")>Đã trả phòng</option>
+                    <option value="Cancelled" @(ViewBag.SelectedStatus == "Cancelled" ? "selected" : "")>Đã hủy</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-center gap-2">
+                <button type="submit" class="btn btn-sm btn-danger px-3 fw-semibold" style="white-space: nowrap;">Tìm kiếm</button>
+                <a href="@Url.Action("Index")" class="btn btn-sm btn-outline-secondary px-3" style="white-space: nowrap;">Tất cả</a>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Danh sách đặt phòng -->
+<div class="card-custom">
+    <div class="card-custom-header">
+        <span>Danh sách phiếu đặt phòng (@Model.Count() phiếu)</span>
+    </div>
+    <div class="card-custom-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th class="ps-3">Mã đơn</th>
+                        <th>Khách hàng</th>
+                        <th>Phòng</th>
+                        <th>Thời gian lưu trú</th>
+                        <th>Tiền phòng</th>
+                        <th>Dịch vụ</th>
+                        <th>Tổng cộng</th>
+                        <th>Tình trạng</th>
+                        <th class="text-end pe-3">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-4">Không tìm thấy đơn đặt phòng nào phù hợp.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var item in Model)
+                        {
+                            var room = roomDict != null && roomDict.ContainsKey(item.RoomId) ? roomDict[item.RoomId] : null;
+                            var rt = room != null && rtDict != null && rtDict.ContainsKey(room.RoomTypeId) ? rtDict[room.RoomTypeId] : null;
+                            <tr>
+                                <td class="ps-3 fw-bold text-danger">@item.BookingCode</td>
+                                <td>
+                                    <div class="fw-bold">@item.CustomerName</div>
+                                    <div class="small text-muted">SĐT: @item.CustomerPhone &bull; @item.GuestCount khách</div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-dark fs-6">@(room != null ? room.RoomNumber : "#" + item.RoomId)</span>
+                                    <div class="small text-muted">@(rt != null ? rt.Name : "")</div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">@item.CheckInDate.ToString("dd/MM/yyyy") &rarr; @item.CheckOutDate.ToString("dd/MM/yyyy")</div>
+                                    <div class="small text-muted">@item.TotalNights đêm (Cọc: @item.DepositAmount.ToString("N0")đ)</div>
+                                </td>
+                                <td style="white-space:nowrap;">@item.RoomTotalAmount.ToString("N0") đ</td>
+                                <td style="white-space:nowrap;">@item.ServiceTotalAmount.ToString("N0") đ</td>
+                                <td class="fw-bold text-dark" style="white-space:nowrap;">@item.FinalTotal.ToString("N0") đ</td>
+                                <td style="white-space:nowrap;"><span class="badge-status @item.StatusBadgeClass">@item.StatusText</span></td>
+                                <td class="text-end pe-3" style="white-space:nowrap;">
+                                    <a href="@Url.Action("Details", new { id = item.Id })" class="btn btn-sm btn-danger">
+                                        @if (item.Status == "Booked") { <text>Nhận phòng / Chi tiết</text> }
+                                        else if (item.Status == "CheckedIn") { <text>Dịch vụ / Trả phòng</text> }
+                                        else { <text>Xem hóa đơn</text> }
+                                    </a>
+                                    @if (item.Status == "Booked" || item.Status == "CheckedIn")
+                                    {
+                                        <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-sm btn-outline-primary">Đổi lịch</a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

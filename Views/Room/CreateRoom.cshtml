@@ -1,0 +1,69 @@
+@model QuanLyLuuTru.Models.Room
+@{
+    ViewBag.Title = "Thêm Phòng mới";
+}
+
+<div class="card-custom" style="max-width: 720px; margin: 0 auto;">
+    <div class="card-custom-header">
+        <span>+ Thêm Phòng Lưu Trú Mới</span>
+        <a href="@Url.Action("Index")" class="btn btn-sm btn-outline-secondary">&larr; Quay lại</a>
+    </div>
+    <div class="card-custom-body">
+        @using (Html.BeginForm())
+        {
+            @Html.AntiForgeryToken()
+            @Html.ValidationSummary(false, "", new { @class = "alert alert-danger small" })
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Số phòng / Mã phòng (*)</label>
+                    @Html.TextBoxFor(m => m.RoomNumber, new { @class = "form-control", placeholder = "VD: P104, P204...", required = "required" })
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Tầng (*)</label>
+                    @Html.TextBoxFor(m => m.Floor, new { @class = "form-control", type = "number", min = "1", max = "10", required = "required" })
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Danh mục Loại phòng (*)</label>
+                    @Html.DropDownListFor(m => m.RoomTypeId, ViewBag.RoomTypes as SelectList, new { @class = "form-select" })
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Đơn giá phòng / đêm (VNĐ) (*)</label>
+                    <input type="number" name="PricePerNight" class="form-control" min="0" value="@((long)Model.PricePerNight)" required />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Sức chứa tối đa (Khách) (*)</label>
+                    @Html.TextBoxFor(m => m.MaxGuests, new { @class = "form-control", type = "number", min = "1", max = "10", required = "required" })
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Trạng thái phòng</label>
+                    <select name="Status" class="form-select">
+                        <option value="Available" @(Model.Status == "Available" ? "selected" : "")>Phòng trống (Sẵn sàng)</option>
+                        <option value="Cleaning" @(Model.Status == "Cleaning" ? "selected" : "")>Cần dọn vệ sinh</option>
+                        <option value="Maintenance" @(Model.Status == "Maintenance" ? "selected" : "")>Đang bảo trì</option>
+                    </select>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label fw-semibold">Tiện nghi trong phòng</label>
+                    @Html.TextBoxFor(m => m.Description, new { @class = "form-control", placeholder = "VD: Giường đôi 1m6, điều hòa, tivi, bình nóng lạnh, wifi..." })
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label fw-semibold">Ghi chú thêm</label>
+                    @Html.TextAreaFor(m => m.Notes, new { @class = "form-control", rows = "2", placeholder = "VD: Ban công hướng phố..." })
+                </div>
+
+                <div class="col-12 pt-3 border-top d-flex justify-content-end gap-2">
+                    <a href="@Url.Action("Index")" class="btn btn-outline-secondary">Hủy bỏ</a>
+                    <button type="submit" class="btn btn-danger px-4 fw-semibold">Lưu thông tin phòng</button>
+                </div>
+            </div>
+        }
+    </div>
+</div>

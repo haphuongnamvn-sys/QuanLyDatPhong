@@ -1,0 +1,73 @@
+@model IEnumerable<QuanLyLuuTru.Models.RoomType>
+@{
+    ViewBag.Title = "Quản lý Loại phòng & Bảng giá";
+    bool isAdmin = ViewBag.IsAdmin == true;
+    var roomCounts = ViewBag.RoomCounts as Dictionary<int, int>;
+}
+
+<div class="page-header-box">
+    <div>
+        <h1 class="page-title">Quản lý Loại phòng &amp; Bảng giá</h1>
+        <p class="page-subtitle">Thiết lập danh mục loại phòng, giá ngày thường, giá cuối tuần (T7-CN) và phụ thu trả phòng muộn.</p>
+    </div>
+    @if (isAdmin)
+    {
+        <div>
+            <a href="@Url.Action("CreateRoomType")" class="btn btn-danger btn-sm fw-semibold">+ Thêm Loại phòng mới</a>
+        </div>
+    }
+</div>
+
+<div class="card-custom">
+    <div class="card-custom-header">
+        <span>Danh sách Loại phòng &amp; Bảng giá (@Model.Count() loại phòng)</span>
+    </div>
+    <div class="card-custom-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th class="ps-3">Mã</th>
+                        <th>Loại phòng</th>
+                        <th>Giá ngày thường</th>
+                        <th>Giá cuối tuần</th>
+                        <th>Phụ thu trả muộn</th>
+                        <th>Sức chứa</th>
+                        <th>Số phòng</th>
+                        <th>Tiện nghi</th>
+                        @if (isAdmin)
+                        {
+                            <th class="text-end pe-3">Thao tác</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var rt in Model)
+                    {
+                        int count = roomCounts != null && roomCounts.ContainsKey(rt.Id) ? roomCounts[rt.Id] : 0;
+                        <tr>
+                            <td class="ps-3 text-muted">#@rt.Id</td>
+                            <td class="fw-bold text-dark">@rt.Name</td>
+                            <td class="fw-bold text-danger" style="white-space:nowrap;">@rt.BasePrice.ToString("N0") đ</td>
+                            <td class="fw-semibold text-primary" style="white-space:nowrap;">@rt.WeekendPrice.ToString("N0") đ</td>
+                            <td style="white-space:nowrap;">@rt.LateCheckoutFeePerHour.ToString("N0") đ/h</td>
+                            <td style="white-space:nowrap;">@rt.MaxGuests khách</td>
+                            <td style="white-space:nowrap;"><span class="badge bg-light text-dark border">@count phòng</span></td>
+                            <td class="small text-muted" style="max-width:260px;">@rt.Description</td>
+                            @if (isAdmin)
+                            {
+                                <td class="text-end pe-3" style="white-space:nowrap;">
+                                    <a href="@Url.Action("EditRoomType", new { id = rt.Id })" class="btn btn-sm btn-outline-primary">Sửa</a>
+                                    @using (Html.BeginForm("DeleteRoomType", "Room", new { id = rt.Id }, FormMethod.Post, new { style = "display:inline;" }))
+                                    {
+                                        <button type="submit" class="btn btn-sm btn-outline-danger ms-1" onclick="return confirm('Xóa loại phòng này?');">Xóa</button>
+                                    }
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,56 @@
+@model QuanLyLuuTru.Models.UserAccount
+@{
+    ViewBag.Title = "Đăng ký tài khoản khách hàng";
+}
+
+<div class="row justify-content-center mt-3">
+    <div class="col-md-6">
+        <div class="card-custom">
+            <div class="card-custom-header">
+                <span>&#9998; Đăng ký tài khoản Khách hàng</span>
+                <a href="@Url.Action("Login", "Account")" class="btn btn-sm btn-outline-secondary">Đã có tài khoản? Đăng nhập</a>
+            </div>
+            <div class="card-custom-body">
+                @using (Html.BeginForm("Register", "Account", FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.ValidationSummary(false, "", new { @class = "alert alert-danger small" })
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Tên đăng nhập (*)</label>
+                            @Html.TextBoxFor(m => m.Username, new { @class = "form-control", placeholder = "VD: nguyenvana", required = "required" })
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Họ và tên (*)</label>
+                            @Html.TextBoxFor(m => m.FullName, new { @class = "form-control", placeholder = "VD: Nguyễn Văn A", required = "required" })
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Mật khẩu (*)</label>
+                            <input type="password" name="Password" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Nhập lại mật khẩu (*)</label>
+                            <input type="password" name="ConfirmPassword" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Số điện thoại (*)</label>
+                            @Html.TextBoxFor(m => m.Phone, new { @class = "form-control", placeholder = "VD: 0912345678", required = "required" })
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Số CCCD / CMND</label>
+                            @Html.TextBoxFor(m => m.IdentityCard, new { @class = "form-control", placeholder = "VD: 001099012345" })
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Email</label>
+                            @Html.TextBoxFor(m => m.Email, new { @class = "form-control", type = "email", placeholder = "VD: email@gmail.com" })
+                        </div>
+                        <div class="col-12 pt-2">
+                            <button type="submit" class="btn btn-danger w-100 fw-semibold py-2">Đăng ký tài khoản</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

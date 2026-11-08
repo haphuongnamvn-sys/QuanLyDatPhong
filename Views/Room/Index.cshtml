@@ -1,0 +1,242 @@
+@model IEnumerable<QuanLyLuuTru.Models.RoomAvailabilityResult>
+@using QuanLyLuuTru.Models
+@{
+    bool isAdmin = ViewBag.IsAdmin == true;
+    ViewBag.Title = isAdmin ? "Quản lý Phòng" : "Danh sách Phòng";
+    var roomTypes = ViewBag.RoomTypes as List<RoomType>;
+    int availableCount = Model.Count(x => x.IsAvailable);
+    int unavailableCount = Model.Count(x => !x.IsAvailable);
+}
+
+@if (isAdmin)
+{
+    <div class="page-header-box">
+        <div>
+            <h1 class="page-title">Quản lý Phòng lưu trú</h1>
+            <p class="page-subtitle">Quản trị viên quản lý danh sách phòng, đơn giá và tiện nghi (Thêm, Sửa, Xóa phòng).</p>
+        </div>
+        <div>
+            <a href="@Url.Action("CreateRoom", "Room")" class="btn btn-danger btn-sm fw-semibold">+ Thêm Phòng mới</a>
+        </div>
+    </div>
+
+    <div class="card-custom">
+        <div class="card-custom-header">
+            <span>Danh sách phòng (@Model.Count() phòng)</span>
+        </div>
+        <div class="card-custom-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead>
+                        <tr>
+                            <th class="ps-3">Số phòng</th>
+                            <th>Loại phòng</th>
+                            <th>Sức chứa</th>
+                            <th>Giá phòng</th>
+                            <th>Tình trạng</th>
+                            <th>Ghi chú</th>
+                            <th class="text-end pe-3">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            string categoryName = !string.IsNullOrEmpty(item.Room.CategoryName)
+                                ? item.Room.CategoryName
+                                : (item.RoomType != null ? item.RoomType.Name : "");
+                            decimal price = item.Room.PricePerNight > 0
+                                ? item.Room.PricePerNight
+                                : (item.RoomType != null ? item.RoomType.BasePrice : 300000);
+                            int maxGuests = item.Room.MaxGuests > 0
+                                ? item.Room.MaxGuests
+                                : (item.RoomType != null ? item.RoomType.MaxGuests : 2);
+                            string desc = !string.IsNullOrEmpty(item.Room.Description)
+                                ? item.Room.Description
+                                : (item.RoomType != null ? item.RoomType.Description : "");
+
+                            <tr>
+                                <td class="ps-3" style="white-space: nowrap;">
+                                    <div class="fw-bold fs-6 text-dark">@item.Room.RoomNumber</div>
+                                    <div class="small text-muted">Tầng @item.Room.Floor</div>
+                                </td>
+                                <td>
+                                    <div class="fw-bold text-dark">@categoryName</div>
+                                    <div class="small text-muted">@desc</div>
+                                </td>
+                                <td style="white-space: nowrap;">@maxGuests khách</td>
+                                <td class="fw-bold text-danger" style="white-space: nowrap;">@price.ToString("N0") đ/đêm</td>
+                                <td style="white-space: nowrap;">
+                                    @if (item.Room.Status == "Cleaning")
+                                    {
+                                        <span class="badge-status badge-cleaning">Phòng đang chờ dọn vệ sinh</span>
+                                    }
+                                    else if (item.Room.Status == "Maintenance")
+                                    {
+                                        <span class="badge-status badge-maintenance">Phòng đang bảo trì</span>
+                                    }
+                                    else if (!item.IsAvailable)
+                                    {
+                                        <span class="badge-status badge-occupied">Phòng đã được đặt</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-status badge-available">Phòng còn trống</span>
+                                    }
+                                </td>
+                                <td class="small text-muted">@item.Room.Notes</td>
+                                <td class="text-end pe-3" style="white-space: nowrap;">
+                                    <a href="@Url.Action("EditRoom", "Room", new { id = item.Room.Id })" class="btn btn-sm btn-outline-primary">Sửa</a>
+                                    @using (Html.BeginForm("DeleteRoom", "Room", new { id = item.Room.Id }, FormMethod.Post, new { style = "display:inline;" }))
+                                    {
+                                        <button type="submit" class="btn btn-sm btn-outline-danger ms-1" onclick="return confirm('Xóa phòng @item.Room.RoomNumber?');">Xóa</button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="page-header-box">
+        <div>
+            <h1 class="page-title">Danh sách Phòng</h1>
+            <p class="page-subtitle">Kiểm tra tình trạng phòng theo khoảng thời gian và đặt phòng cho khách.</p>
+        </div>
+    </div>
+
+    <div class="card-custom mb-4">
+        <div class="card-custom-body py-3 bg-light">
+            @using (Html.BeginForm("Index", "Room", FormMethod.Get, new { @class = "row g-3 align-items-end" }))
+            {
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold mb-1">Từ ngày (Nhận phòng)</label>
+                    <input type="date" name="checkIn" class="form-control form-control-sm" value="@ViewBag.CheckIn" required />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold mb-1">Đến ngày (Trả phòng)</label>
+                    <input type="date" name="checkOut" class="form-control form-control-sm" value="@ViewBag.CheckOut" required />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold mb-1">Loại phòng</label>
+                    <select name="roomTypeId" class="form-select form-select-sm">
+                        <option value="">-- Tất cả loại phòng --</option>
+                        @foreach (var rt in roomTypes)
+                        {
+                            <option value="@rt.Id" @(ViewBag.SelectedRoomTypeId == rt.Id ? "selected" : "")>@rt.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-center gap-2">
+                    <button type="submit" class="btn btn-sm btn-danger px-3 fw-semibold" style="white-space: nowrap;">Kiểm tra</button>
+                    <a href="@Url.Action("Index", "Room")" class="btn btn-sm btn-outline-secondary px-3" style="white-space: nowrap;">Mặc định</a>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="card-custom">
+        <div class="card-custom-header">
+            <span>
+                Danh sách phòng: Có <strong class="text-success">@availableCount phòng còn trống</strong> và <strong class="text-danger">@unavailableCount phòng đã đặt / đang dọn / bảo trì</strong>
+            </span>
+        </div>
+        <div class="card-custom-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead>
+                        <tr>
+                            <th class="ps-3">Số phòng</th>
+                            <th>Loại phòng</th>
+                            <th>Sức chứa</th>
+                            <th>Giá phòng</th>
+                            <th>Tình trạng</th>
+                            <th class="text-end pe-3">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            string categoryName = !string.IsNullOrEmpty(item.Room.CategoryName)
+                                ? item.Room.CategoryName
+                                : (item.RoomType != null ? item.RoomType.Name : "");
+                            decimal price = item.Room.PricePerNight > 0
+                                ? item.Room.PricePerNight
+                                : (item.RoomType != null ? item.RoomType.BasePrice : 300000);
+                            int maxGuests = item.Room.MaxGuests > 0
+                                ? item.Room.MaxGuests
+                                : (item.RoomType != null ? item.RoomType.MaxGuests : 2);
+                            string desc = !string.IsNullOrEmpty(item.Room.Description)
+                                ? item.Room.Description
+                                : (item.RoomType != null ? item.RoomType.Description : "");
+
+                            <tr>
+                                <td class="ps-3" style="white-space: nowrap;">
+                                    <div class="fw-bold fs-6 text-dark">@item.Room.RoomNumber</div>
+                                    <div class="small text-muted">Tầng @item.Room.Floor</div>
+                                </td>
+                                <td>
+                                    <div class="fw-bold text-dark">@categoryName</div>
+                                    <div class="small text-muted">@desc</div>
+                                </td>
+                                <td style="white-space: nowrap;">@maxGuests khách</td>
+                                <td style="white-space: nowrap;">
+                                    <span class="fw-bold text-danger">@price.ToString("N0") đ/đêm</span>
+                                </td>
+                                <td>
+                                    @if (item.IsAvailable)
+                                    {
+                                        <span class="badge-status badge-available">Phòng còn trống</span>
+                                    }
+                                    else if (item.Room.Status == "Cleaning")
+                                    {
+                                        <span class="badge-status badge-cleaning">Phòng đang chờ dọn vệ sinh</span>
+                                    }
+                                    else if (item.Room.Status == "Maintenance")
+                                    {
+                                        <span class="badge-status badge-maintenance">Phòng đang bảo trì</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-status badge-occupied">Phòng đã được đặt</span>
+                                        if (item.ConflictingBooking != null)
+                                        {
+                                            <div class="small text-muted mt-1">
+                                                Đơn @item.ConflictingBooking.BookingCode - @item.ConflictingBooking.CustomerName (@item.ConflictingBooking.CheckInDate.ToString("dd/MM") - @item.ConflictingBooking.CheckOutDate.ToString("dd/MM"))
+                                            </div>
+                                        }
+                                    }
+                                </td>
+                                <td class="text-end pe-3" style="white-space: nowrap;">
+                                    @if (item.IsAvailable)
+                                    {
+                                        <a href="@Url.Action("Create", "Booking", new { roomId = item.Room.Id, checkIn = ViewBag.CheckIn, checkOut = ViewBag.CheckOut })" class="btn btn-sm btn-danger fw-semibold">
+                                            + Đặt phòng này
+                                        </a>
+                                    }
+                                    else if (item.ConflictingBooking != null)
+                                    {
+                                        <a href="@Url.Action("Details", "Booking", new { id = item.ConflictingBooking.Id })" class="btn btn-sm btn-outline-secondary">
+                                            Xem đơn @item.ConflictingBooking.BookingCode
+                                        </a>
+                                    }
+                                    else if (item.Room.Status == "Cleaning")
+                                    {
+                                        <a href="@Url.Action("Index", "Housekeeping")" class="btn btn-sm btn-outline-warning">Chờ dọn vệ sinh</a>
+                                    }
+                                    else
+                                    {
+                                        <span class="small text-muted">Đang bảo trì</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}

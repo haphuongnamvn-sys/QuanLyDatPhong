@@ -1,0 +1,126 @@
+@model QuanLyLuuTru.Models.BusinessReportViewModel
+@{
+    ViewBag.Title = "Thống kê tỷ lệ lấp đầy";
+}
+
+<div class="page-header-box">
+    <div>
+        <h1 class="page-title">Thống kê Tỷ lệ Lấp đầy Phòng (Occupancy Rate)</h1>
+        <p class="page-subtitle">Đánh giá công suất khai thác phòng từ <strong>@Model.FromDate.ToString("dd/MM/yyyy")</strong> đến <strong>@Model.ToDate.ToString("dd/MM/yyyy")</strong> (@Model.TotalDays ngày) để hỗ trợ lập kế hoạch kinh doanh.</p>
+    </div>
+    <div>
+        @using (Html.BeginForm("Occupancy", "Report", FormMethod.Get, new { @class = "d-flex align-items-center gap-2 flex-wrap" }))
+        {
+            <span class="small fw-bold">Từ ngày:</span>
+            <input type="date" name="fromDate" class="form-control form-control-sm" style="width:140px;" value="@Model.FromDate.ToString("yyyy-MM-dd")" />
+            <span class="small fw-bold">Đến:</span>
+            <input type="date" name="toDate" class="form-control form-control-sm" style="width:140px;" value="@Model.ToDate.ToString("yyyy-MM-dd")" />
+            <button type="submit" class="btn btn-sm btn-danger fw-semibold">Thống kê</button>
+        }
+    </div>
+</div>
+
+<!-- 3 Thẻ chỉ số lấp đầy -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-label">Tỷ Lệ Lấp Đầy Toàn Cơ Sở</div>
+            <div class="stat-value text-danger">@Model.OverallOccupancyRate%</div>
+            <div class="small text-muted mt-1">Công thức: Số đêm có khách / Tổng quỹ đêm phòng</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card stat-green">
+            <div class="stat-label">Tổng Số Đêm Phòng Có Khách</div>
+            <div class="stat-value text-success">@Model.TotalOccupiedNights <span class="fs-6 fw-normal text-muted">đêm</span></div>
+            <div class="small text-muted mt-1">Trong kỳ báo cáo @Model.TotalDays ngày</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card stat-blue">
+            <div class="stat-label">Tổng Quỹ Đêm Phòng Tối Đa</div>
+            <div class="stat-value text-primary">@Model.TotalCapacityNights <span class="fs-6 fw-normal text-muted">đêm</span></div>
+            <div class="small text-muted mt-1">(@Model.TotalRooms phòng &times; @Model.TotalDays ngày)</div>
+        </div>
+    </div>
+</div>
+
+<!-- Bảng 1: Tỷ lệ lấp đầy theo Loại phòng -->
+<div class="card-custom mb-4">
+    <div class="card-custom-header">
+        <span>1. Thống kê Tỷ lệ lấp đầy theo Loại phòng</span>
+    </div>
+    <div class="card-custom-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-3">Loại phòng</th>
+                        <th class="text-center">Số phòng</th>
+                        <th class="text-center">Số đêm có khách / Tổng quỹ đêm</th>
+                        <th style="width: 280px;">Tỷ lệ lấp đầy (%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.RoomTypeReports)
+                    {
+                        <tr>
+                            <td class="ps-3 fw-bold">@item.RoomTypeName</td>
+                            <td class="text-center">@item.RoomCount phòng</td>
+                            <td class="text-center">@item.OccupiedRoomNights / @item.TotalAvailableRoomNights đêm</td>
+                            <td class="pe-3">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height: 10px;">
+                                        <div class="progress-bar bg-danger" style="width: @(Math.Min(100, item.OccupancyRate))%"></div>
+                                    </div>
+                                    <span class="fw-bold small" style="min-width:45px;">@item.OccupancyRate%</span>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Bảng 2: Tỷ lệ lấp đầy chi tiết từng phòng -->
+<div class="card-custom">
+    <div class="card-custom-header">
+        <span>2. Thống kê Tỷ lệ lấp đầy chi tiết từng Phòng</span>
+    </div>
+    <div class="card-custom-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-3">Số phòng</th>
+                        <th>Loại phòng</th>
+                        <th>Trạng thái hiện tại</th>
+                        <th class="text-center">Số đêm có khách</th>
+                        <th style="width: 280px;">Tỷ lệ lấp đầy (%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model.RoomOccupancies)
+                    {
+                        <tr>
+                            <td class="ps-3 fw-bold">@r.RoomNumber</td>
+                            <td>@r.RoomTypeName</td>
+                            <td><span class="badge bg-light text-dark border">@r.CurrentStatusText</span></td>
+                            <td class="text-center">@r.OccupiedNights / @r.TotalDaysInPeriod đêm</td>
+                            <td class="pe-3">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height: 10px;">
+                                        <div class="progress-bar bg-success" style="width: @(Math.Min(100, r.OccupancyRate))%"></div>
+                                    </div>
+                                    <span class="fw-bold small" style="min-width:45px;">@r.OccupancyRate%</span>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

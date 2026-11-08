@@ -1,0 +1,186 @@
+@using QuanLyLuuTru.Models
+@{
+    string currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "Home";
+    string currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
+    string queryRoomType = Request.QueryString["roomTypeId"];
+    var currentUser = AuthHelper.GetCurrentUser();
+    string role = currentUser != null ? currentUser.Role : "";
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - Website Đặt Phòng Homestay</title>
+    @Styles.Render("~/Content/css")
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-top">
+            <div class="header-container">
+                <a href="@Url.Action("Index", "Home")" class="brand-logo">
+                    <div class="brand-icon">&#8962;</div>
+                    <div class="brand-text">
+                        <span class="brand-main">HOMESTAY</span>
+                        <span class="brand-sub">WEBSITE ĐẶT PHÒNG &amp; QUẢN LÝ LƯU TRÚ</span>
+                    </div>
+                </a>
+
+                <div class="header-right">
+                    @if (currentUser != null)
+                    {
+                        <div class="dropdown">
+                            <a class="btn-user-menu dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <span class="avatar-circle">&#128100;</span>
+                                <span>@currentUser.FullName <small class="text-muted">(@currentUser.RoleText)</small></span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border mt-1">
+                                <li class="px-3 py-2 border-bottom bg-light small">
+                                    <div class="fw-bold text-dark">@currentUser.FullName</div>
+                                    <div class="text-muted">Tài khoản: @currentUser.Username &bull; @currentUser.RoleText</div>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item py-2" href="@Url.Action("Profile", "Account")">
+                                        &#128100; Quản lý thông tin cá nhân
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item py-2" href="@Url.Action("ChangePassword", "Account")">
+                                        &#128274; Đổi mật khẩu
+                                    </a>
+                                </li>
+                                @if (currentUser.Role == "Customer")
+                                {
+                                    <li>
+                                        <a class="dropdown-item py-2" href="@Url.Action("MyBookings", "Booking")">
+                                            &#128203; Đơn đặt phòng của tôi
+                                        </a>
+                                    </li>
+                                }
+                                <li><hr class="dropdown-divider" /></li>
+                                <li>
+                                    <a class="dropdown-item py-2 text-danger fw-semibold" href="@Url.Action("Logout", "Account")">
+                                        &#10162; Đăng xuất
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Chưa đăng nhập: Nút Đăng nhập & Đăng ký -->
+                        <a href="@Url.Action("Register", "Account")" class="btn-user-menu">
+                            <span>Đăng ký</span>
+                        </a>
+                        <a href="@Url.Action("Login", "Account")" class="btn-login-primary">
+                            <span>&#128100;</span>
+                            <span>Đăng nhập</span>
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <nav class="header-menubar">
+            <ul class="nav-menu-list">
+                @if (role == "Admin")
+                {
+                    <li class="nav-menu-item">
+                        <a href="@Url.Action("RoomTypes", "Room")" class="@(currentController == "Room" && (currentAction == "RoomTypes" || currentAction.Contains("RoomType")) ? "active" : "")">Quản lý loại phòng</a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="@Url.Action("Index", "Room")" class="@(currentController == "Room" && !currentAction.Contains("RoomType") ? "active" : "")">Quản lý phòng</a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="@Url.Action("Index", "Service")" class="@(currentController == "Service" ? "active" : "")">Quản lý dịch vụ</a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="@Url.Action("Users", "Account")" class="@(currentController == "Account" && (currentAction == "Users" || currentAction == "CreateUser" || currentAction == "EditUser") ? "active" : "")">Quản lý tài khoản</a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="@Url.Action("Index", "Report")" class="@(currentController == "Report" ? "active" : "")">Thống kê &amp; Doanh thu</a>
+                    </li>
+                }
+                else if (role == "Staff")
+                {
+                    <li class="nav-menu-item">
+                        <a href="@Url.Action("Index", "Room")" class="@(currentController == "Room" ? "active" : "")">Danh sách phòng</a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="@Url.Action("Index", "Booking")" class="@(currentController == "Booking" ? "active" : "")">Quản lý đặt phòng</a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="@Url.Action("Requests", "Service")" class="@(currentController == "Service" ? "active" : "")">Xác nhận dịch vụ</a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="@Url.Action("Index", "Housekeeping")" class="@(currentController == "Housekeeping" ? "active" : "")">Quản lý dọn phòng</a>
+                    </li>
+                }
+                else
+                {
+                    var roomTypesMenu = DataStore.Db.RoomTypes.OrderBy(rt => rt.BasePrice).ToList();
+                    <li class="nav-menu-item">
+                        <a href="@Url.Action("Index", "Home")" class="@(currentController == "Home" && currentAction == "Index" && string.IsNullOrEmpty(queryRoomType) ? "active" : "")">
+                            Tất cả phòng trống
+                        </a>
+                    </li>
+                    foreach (var rt in roomTypesMenu)
+                    {
+                        <li class="nav-menu-item">
+                            <a href="@Url.Action("Index", "Home", new { roomTypeId = rt.Id })" class="@(currentController == "Home" && queryRoomType == rt.Id.ToString() ? "active" : "")">
+                                @rt.Name
+                            </a>
+                        </li>
+                    }
+                    if (role == "Customer")
+                    {
+                        <li class="nav-menu-item">
+                            <a href="@Url.Action("MyBookings", "Booking")" class="@(currentController == "Booking" && (currentAction == "MyBookings" || currentAction == "AddService" || currentAction == "Details") ? "active" : "")">
+                                Đơn đặt phòng của tôi
+                            </a>
+                        </li>
+                    }
+                }
+            </ul>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show shadow-sm mb-3" role="alert">
+                <strong>&#10004;</strong> @TempData["Success"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-3" role="alert">
+                <strong>&#9888;</strong> @TempData["Error"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        @RenderBody()
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-container">
+            <div>
+                <strong class="text-dark">HOMESTAY &mdash; Hệ thống Quản lý Đặt phòng và Vận hành Cơ sở Lưu trú</strong>
+                <div class="small text-muted mt-1">
+                    Địa chỉ: Số 128 Phố Cổ, Quận Hoàn Kiếm, Hà Nội &bull; Điện thoại liên hệ: 0901 234 567 &bull; Email: lienhe@homestay.vn
+                </div>
+            </div>
+            <div class="text-md-end small text-muted">
+                <div>Giờ nhận phòng: Từ 14:00 &bull; Giờ trả phòng: Trước 12:00</div>
+                <div class="mt-1">&copy; @DateTime.Now.Year Bản quyền thuộc về Cơ sở Lưu trú Homestay.</div>
+            </div>
+        </div>
+    </footer>
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    @RenderSection("scripts", required: false)
+</body>
+</html>

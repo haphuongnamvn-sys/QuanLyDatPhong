@@ -1,0 +1,51 @@
+@model QuanLyLuuTru.Models.RoomType
+@{
+    ViewBag.Title = "Thêm Hạng phòng & Bảng giá";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card-custom">
+            <div class="card-custom-header">
+                <span>+ Thêm Loại Phòng &amp; Thiết Lập Bảng Giá Mới</span>
+                <a href="@Url.Action("RoomTypes")" class="btn btn-sm btn-outline-secondary">&larr; Quay lại</a>
+            </div>
+            <div class="card-custom-body">
+                @using (Html.BeginForm())
+                {
+                    @Html.AntiForgeryToken()
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Tên Loại Phòng (*)</label>
+                            @Html.TextBoxFor(m => m.Name, new { @class = "form-control", placeholder = "VD: Phòng VIP View Hồ...", required = "required" })
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Số khách tiêu chuẩn tối đa (*)</label>
+                            @Html.TextBoxFor(m => m.MaxGuests, new { @class = "form-control", type = "number", min = "1", max = "15", required = "required" })
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Giá ngày thường (VNĐ/đêm) (*)</label>
+                            <input type="number" name="BasePrice" class="form-control" min="0" value="@((long)Model.BasePrice)" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Giá cuối tuần T7-CN (VNĐ/đêm) (*)</label>
+                            <input type="number" name="WeekendPrice" class="form-control" min="0" value="@((long)Model.WeekendPrice)" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Phụ thu trả muộn (VNĐ/giờ)</label>
+                            <input type="number" name="LateCheckoutFeePerHour" class="form-control" min="0" value="@((long)Model.LateCheckoutFeePerHour)" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Mô tả tiện nghi phòng</label>
+                            @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = "3", placeholder = "Giường, điều hòa, tivi, tủ lạnh, ban công..." })
+                        </div>
+                        <div class="col-12 pt-2 d-flex justify-content-end gap-2">
+                            <a href="@Url.Action("RoomTypes")" class="btn btn-outline-secondary">Hủy</a>
+                            <button type="submit" class="btn btn-danger px-4 fw-semibold">Lưu Loại Phòng</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

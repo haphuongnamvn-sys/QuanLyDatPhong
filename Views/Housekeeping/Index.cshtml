@@ -1,0 +1,96 @@
+@model IEnumerable<QuanLyLuuTru.Models.HousekeepingTask>
+@{
+    ViewBag.Title = "Quản lý công việc dọn phòng";
+    var roomDict = ViewBag.RoomDict as Dictionary<int, QuanLyLuuTru.Models.Room>;
+}
+
+<div class="page-header-box">
+    <div>
+        <h1 class="page-title">Quản lý Công việc Vệ sinh Phòng</h1>
+        <p class="page-subtitle">Nhân viên theo dõi danh sách phòng cần dọn và bấm xác nhận hoàn thành để mở lại phòng trống.</p>
+    </div>
+</div>
+
+<div class="card-custom">
+    <div class="card-custom-header">
+        <span>Danh sách công việc vệ sinh (@Model.Count() phiếu)</span>
+        <div class="d-flex gap-1">
+            <a href="@Url.Action("Index")" class="btn btn-sm @(string.IsNullOrEmpty(ViewBag.SelectedStatus) ? "btn-danger" : "btn-outline-secondary")">Tất cả</a>
+            <a href="@Url.Action("Index", new { status = "Pending" })" class="btn btn-sm @(ViewBag.SelectedStatus == "Pending" ? "btn-danger" : "btn-outline-secondary")">Chờ dọn</a>
+            <a href="@Url.Action("Index", new { status = "InProgress" })" class="btn btn-sm @(ViewBag.SelectedStatus == "InProgress" ? "btn-danger" : "btn-outline-secondary")">Đang dọn</a>
+            <a href="@Url.Action("Index", new { status = "Completed" })" class="btn btn-sm @(ViewBag.SelectedStatus == "Completed" ? "btn-danger" : "btn-outline-secondary")">Đã hoàn thành</a>
+        </div>
+    </div>
+    <div class="card-custom-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th class="ps-3">Phòng</th>
+                        <th>Công việc</th>
+                        <th>Nhân viên</th>
+                        <th>Ưu tiên</th>
+                        <th>Thời gian</th>
+                        <th>Tình trạng</th>
+                        <th class="text-end pe-3">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        var r = roomDict != null && roomDict.ContainsKey(item.RoomId) ? roomDict[item.RoomId] : null;
+                        <tr>
+                            <td class="ps-3" style="white-space:nowrap;">
+                                <span class="badge bg-dark fs-6">@(r != null ? r.RoomNumber : "#" + item.RoomId)</span>
+                                <div class="small text-muted mt-1">@(r != null ? r.StatusText : "")</div>
+                            </td>
+                            <td>
+                                <div class="fw-bold">@item.TaskType</div>
+                                @if (!string.IsNullOrEmpty(item.Notes))
+                                {
+                                    <div class="small text-muted">@item.Notes</div>
+                                }
+                            </td>
+                            <td class="fw-semibold">@item.StaffName</td>
+                            <td style="white-space:nowrap;"><span class="badge bg-light text-danger border">@item.Priority</span></td>
+                            <td class="small" style="white-space:nowrap;">
+                                <div>Tạo: @item.CreatedAt.ToString("HH:mm dd/MM")</div>
+                                @if (item.CompletedAt.HasValue)
+                                {
+                                    <div class="text-success fw-semibold">Xong: @item.CompletedAt.Value.ToString("HH:mm dd/MM")</div>
+                                }
+                            </td>
+                            <td style="white-space:nowrap;"><span class="badge-status @item.StatusBadgeClass">@item.StatusText</span></td>
+                            <td class="text-end pe-3" style="white-space:nowrap;">
+                                @if (item.Status == "Pending")
+                                {
+                                    using (Html.BeginForm("UpdateStatus", "Housekeeping", FormMethod.Post, new { style = "display:inline;" }))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <input type="hidden" name="newStatus" value="InProgress" />
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">Bắt đầu dọn</button>
+                                    }
+                                }
+                                @if (item.Status != "Completed")
+                                {
+                                    using (Html.BeginForm("UpdateStatus", "Housekeeping", FormMethod.Post, new { style = "display:inline;" }))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <input type="hidden" name="newStatus" value="Completed" />
+                                        <button type="submit" class="btn btn-sm btn-success fw-semibold">&#10004; Xác nhận đã dọn xong</button>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="small text-muted">Đã hoàn tất</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

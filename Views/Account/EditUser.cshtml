@@ -1,0 +1,68 @@
+@model QuanLyLuuTru.Models.UserAccount
+@{
+    ViewBag.Title = "Sửa tài khoản " + Model.Username;
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card-custom">
+            <div class="card-custom-header">
+                <span>&#9998; Sửa thông tin &amp; Phân quyền: @Model.Username</span>
+                <a href="@Url.Action("Users")" class="btn btn-sm btn-outline-secondary">&larr; Quay lại</a>
+            </div>
+            <div class="card-custom-body">
+                @using (Html.BeginForm())
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.Id)
+                    @Html.ValidationSummary(false, "", new { @class = "alert alert-danger small" })
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Tên đăng nhập (*)</label>
+                            @Html.TextBoxFor(m => m.Username, new { @class = "form-control", required = "required" })
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Mật khẩu (*)</label>
+                            @Html.TextBoxFor(m => m.Password, new { @class = "form-control", required = "required" })
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Họ và tên (*)</label>
+                            @Html.TextBoxFor(m => m.FullName, new { @class = "form-control", required = "required" })
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Số điện thoại (*)</label>
+                            @Html.TextBoxFor(m => m.Phone, new { @class = "form-control", required = "required" })
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Email</label>
+                            @Html.TextBoxFor(m => m.Email, new { @class = "form-control" })
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Số CCCD / CMND</label>
+                            @Html.TextBoxFor(m => m.IdentityCard, new { @class = "form-control" })
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Phân quyền (*)</label>
+                            <select name="Role" class="form-select">
+                                <option value="Admin" @(Model.Role == "Admin" ? "selected" : "")>Quản trị viên (Admin)</option>
+                                <option value="Staff" @(Model.Role == "Staff" ? "selected" : "")>Nhân viên (Staff)</option>
+                                <option value="Customer" @(Model.Role == "Customer" ? "selected" : "")>Khách hàng (Customer)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <div class="form-check mb-2">
+                                @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input" })
+                                <label class="form-check-label fw-semibold">Tài khoản đang hoạt động</label>
+                            </div>
+                        </div>
+                        <div class="col-12 pt-2 d-flex justify-content-end gap-2">
+                            <a href="@Url.Action("Users")" class="btn btn-outline-secondary">Hủy</a>
+                            <button type="submit" class="btn btn-danger px-4 fw-semibold">Lưu thay đổi</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

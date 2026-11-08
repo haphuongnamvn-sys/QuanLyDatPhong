@@ -1,0 +1,88 @@
+@model IEnumerable<QuanLyLuuTru.Models.Room>
+@using QuanLyLuuTru.Models
+@{
+    var selectedType = ViewBag.SelectedRoomType as RoomType;
+    ViewBag.Title = selectedType != null ? selectedType.Name : "Danh sách phòng trống";
+    var roomTypes = ViewBag.RoomTypes as Dictionary<int, RoomType>;
+}
+
+<!-- Tiêu đề danh mục đang chọn -->
+<div class="page-header-box">
+    <div>
+        @if (selectedType != null)
+        {
+            <h1 class="page-title">@selectedType.Name &mdash; Có @Model.Count() phòng trống</h1>
+            <p class="page-subtitle">
+                @selectedType.Description &bull; Giá phòng: <strong class="text-danger">@selectedType.BasePrice.ToString("N0") đ/đêm</strong>
+            </p>
+        }
+        else
+        {
+            <h1 class="page-title">Danh sách phòng trống hiện có (@Model.Count() phòng)</h1>
+            <p class="page-subtitle">Chọn danh mục loại phòng trên thanh menu hoặc bấm <strong>Xem chi tiết</strong> để xem thông tin phòng và đặt phòng.</p>
+        }
+    </div>
+</div>
+
+<!-- DANH SÁCH PHÒNG TRỐNG (Chỉ hiển thị các phòng chưa đặt, mỗi thẻ chỉ có nút Xem chi tiết) -->
+@if (!Model.Any())
+{
+    <div class="card-custom">
+        <div class="card-custom-body text-center py-5 text-muted">
+            Hiện tại không còn phòng trống trong danh mục này. Vui lòng chọn danh mục loại phòng khác trên thanh menu.
+        </div>
+    </div>
+}
+else
+{
+    <div class="row g-4">
+        @foreach (var room in Model)
+        {
+            var rt = roomTypes != null && roomTypes.ContainsKey(room.RoomTypeId) ? roomTypes[room.RoomTypeId] : null;
+            string categoryName = !string.IsNullOrEmpty(room.CategoryName) ? room.CategoryName : (rt != null ? rt.Name : "Phòng tiêu chuẩn");
+            decimal price = room.PricePerNight > 0 ? room.PricePerNight : (rt != null ? rt.BasePrice : 300000);
+            int maxGuests = room.MaxGuests > 0 ? room.MaxGuests : (rt != null ? rt.MaxGuests : 2);
+            string desc = !string.IsNullOrEmpty(room.Description) ? room.Description : (rt != null ? rt.Description : "");
+            string thumbClass = "type-" + room.RoomTypeId;
+
+            <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="room-product-card">
+                    <div>
+                        <!-- Hình đại diện phòng -->
+                        <a href="@Url.Action("RoomDetail", "Home", new { id = room.Id })" class="text-decoration-none">
+                            <div class="room-thumb @thumbClass">
+                                <div class="room-thumb-code">Phòng @room.RoomNumber</div>
+                                <div class="room-thumb-floor">Tầng @room.Floor &bull; Tối đa @maxGuests khách</div>
+                            </div>
+                        </a>
+
+                        <!-- Thông tin phòng -->
+                        <div class="room-product-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-light text-dark border">@categoryName</span>
+                                <span class="badge-status badge-available">Còn trống</span>
+                            </div>
+
+                            <div class="mb-2">
+                                <div class="text-danger fw-bold fs-5">
+                                    @price.ToString("N0") đ <small class="text-muted fw-normal fs-6">/ đêm</small>
+                                </div>
+                            </div>
+
+                            <p class="small text-muted mb-0">
+                                @desc
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Chỉ để 1 nút Xem chi tiết -->
+                    <div class="room-product-footer">
+                        <a href="@Url.Action("RoomDetail", "Home", new { id = room.Id })" class="btn btn-sm btn-dark w-100 py-2 fw-semibold">
+                            Xem chi tiết
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

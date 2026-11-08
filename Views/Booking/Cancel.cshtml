@@ -1,0 +1,41 @@
+@model QuanLyLuuTru.Models.Booking
+@using QuanLyLuuTru.Models
+@{
+    ViewBag.Title = "Hủy đặt phòng - " + Model.BookingCode;
+    var room = ViewBag.Room as Room;
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card-custom border-danger">
+            <div class="card-custom-header text-danger">
+                <span>Xác nhận Hủy đơn đặt phòng: @Model.BookingCode</span>
+                <a href="@Url.Action("Details", new { id = Model.Id })" class="btn btn-sm btn-outline-secondary">&larr; Quay lại</a>
+            </div>
+            <div class="card-custom-body">
+                <div class="p-3 rounded bg-light border mb-3 small">
+                    <div><strong>Khách hàng:</strong> @Model.CustomerName (@Model.CustomerPhone)</div>
+                    <div><strong>Phòng đặt:</strong> Phòng @(room != null ? room.RoomNumber : "#" + Model.RoomId)</div>
+                    <div><strong>Ngày nhận - Ngày trả:</strong> @Model.CheckInDate.ToString("dd/MM/yyyy") &rarr; @Model.CheckOutDate.ToString("dd/MM/yyyy")</div>
+                    <div><strong>Tiền đã đặt cọc:</strong> @Model.DepositAmount.ToString("N0") đ</div>
+                </div>
+
+                @using (Html.BeginForm("Cancel", "Booking", FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Lý do hủy đặt phòng (*)</label>
+                        <textarea name="cancelReason" class="form-control" rows="3" placeholder="Nhập lý do hủy đơn đặt phòng..." required></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="@Url.Action("Details", new { id = Model.Id })" class="btn btn-outline-secondary">Không hủy</a>
+                        <button type="submit" class="btn btn-danger px-4 fw-semibold">Xác nhận Hủy đặt phòng</button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

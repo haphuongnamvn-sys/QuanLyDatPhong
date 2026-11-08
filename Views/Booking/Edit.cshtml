@@ -1,0 +1,79 @@
+@model QuanLyLuuTru.Models.Booking
+@{
+    ViewBag.Title = "Thay đổi thông tin Đặt phòng " + Model.BookingCode;
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="card-custom">
+            <div class="card-custom-header">
+                <span>&#9998; Xử lý Thay đổi Lịch lưu trú / Đổi phòng: Mã đơn @Model.BookingCode</span>
+                <a href="@Url.Action("Details", new { id = Model.Id })" class="btn btn-sm btn-outline-secondary">&larr; Quay lại chi tiết đơn</a>
+            </div>
+            <div class="card-custom-body">
+                <div class="alert alert-info small mb-3">
+                    <strong>Lưu ý nghiệp vụ:</strong> Khi thay đổi phòng hoặc ngày nhận/trả phòng, hệ thống sẽ tự động <strong>kiểm tra trùng lịch</strong> với các đơn khác và <strong>tính toán lại tiền phòng</strong> theo bảng giá của phòng mới.
+                </div>
+
+                @using (Html.BeginForm())
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.Id)
+                    @Html.ValidationSummary(false, "", new { @class = "alert alert-danger" })
+
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">Phòng lưu trú (Có thể chọn phòng khác để đổi phòng) (*)</label>
+                            @Html.DropDownListFor(m => m.RoomId, ViewBag.RoomList as SelectList, new { @class = "form-select" })
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Ngày nhận phòng (Check-in) (*)</label>
+                            <input type="date" name="CheckInDate" class="form-control" value="@Model.CheckInDate.ToString("yyyy-MM-dd")" required />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Ngày trả phòng (Check-out) (*)</label>
+                            <input type="date" name="CheckOutDate" class="form-control" value="@Model.CheckOutDate.ToString("yyyy-MM-dd")" required />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Số lượng khách (*)</label>
+                            @Html.TextBoxFor(m => m.GuestCount, new { @class = "form-control", type = "number", min = "1", max = "10", required = "required" })
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Họ tên khách hàng (*)</label>
+                            @Html.TextBoxFor(m => m.CustomerName, new { @class = "form-control", required = "required" })
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Số điện thoại (*)</label>
+                            @Html.TextBoxFor(m => m.CustomerPhone, new { @class = "form-control", required = "required" })
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Số CCCD / CMND</label>
+                            @Html.TextBoxFor(m => m.CustomerIdentityCard, new { @class = "form-control" })
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Tiền đặt cọc (VNĐ)</label>
+                            <input type="number" name="DepositAmount" class="form-control" min="0" value="@((long)Model.DepositAmount)" />
+                        </div>
+
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Ghi chú thay đổi lịch / yêu cầu thêm</label>
+                            @Html.TextBoxFor(m => m.Notes, new { @class = "form-control" })
+                        </div>
+
+                        <div class="col-12 pt-3 d-flex justify-content-end gap-2">
+                            <a href="@Url.Action("Details", new { id = Model.Id })" class="btn btn-outline-secondary">Hủy</a>
+                            <button type="submit" class="btn btn-danger px-4 fw-semibold">Cập nhật thay đổi</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,50 @@
+@model QuanLyLuuTru.Models.ServiceItem
+@{
+    ViewBag.Title = "Cập nhật Dịch vụ phát sinh";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card-custom">
+            <div class="card-custom-header">
+                <span>&#9998; Cập nhật Dịch vụ: @Model.Name</span>
+                <a href="@Url.Action("Index")" class="btn btn-sm btn-outline-secondary">&larr; Quay lại</a>
+            </div>
+            <div class="card-custom-body">
+                @using (Html.BeginForm())
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.Id)
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Tên dịch vụ (*)</label>
+                            @Html.TextBoxFor(m => m.Name, new { @class = "form-control", required = "required" })
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Nhóm dịch vụ</label>
+                            @Html.TextBoxFor(m => m.Category, new { @class = "form-control", required = "required" })
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Đơn vị tính (*)</label>
+                            @Html.TextBoxFor(m => m.Unit, new { @class = "form-control", required = "required" })
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Đơn giá (VNĐ) (*)</label>
+                            <input type="number" name="Price" class="form-control" min="0" value="@((long)Model.Price)" required />
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <div class="form-check mb-2">
+                                @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input" })
+                                <label class="form-check-label fw-semibold">Đang mở phục vụ</label>
+                            </div>
+                        </div>
+                        <div class="col-12 pt-2 d-flex justify-content-end gap-2">
+                            <a href="@Url.Action("Index")" class="btn btn-outline-secondary">Hủy</a>
+                            <button type="submit" class="btn btn-danger px-4 fw-semibold">Cập nhật</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,106 @@
+@model QuanLyLuuTru.Models.Room
+@using QuanLyLuuTru.Models
+@{
+    var rt = ViewBag.RoomType as RoomType;
+    string categoryName = !string.IsNullOrEmpty(Model.CategoryName) ? Model.CategoryName : (rt != null ? rt.Name : "Phòng tiêu chuẩn");
+    decimal price = Model.PricePerNight > 0 ? Model.PricePerNight : (rt != null ? rt.BasePrice : 300000);
+    int maxGuests = Model.MaxGuests > 0 ? Model.MaxGuests : (rt != null ? rt.MaxGuests : 2);
+    string desc = !string.IsNullOrEmpty(Model.Description) ? Model.Description : (rt != null ? rt.Description : "");
+    decimal depositSuggested = Math.Round(price * 0.3m, 0);
+
+    ViewBag.Title = "Chi tiết Phòng " + Model.RoomNumber;
+    var relatedRooms = ViewBag.RelatedRooms as List<Room>;
+    var serviceList = ViewBag.ServiceList as List<ServiceItem>;
+}
+
+<div class="card-custom" style="max-width: 840px; margin: 0 auto;">
+    <div class="card-custom-header">
+        <span>Chi tiết Phòng @Model.RoomNumber &mdash; @categoryName</span>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge-status @Model.StatusBadgeClass">@Model.StatusText</span>
+            <a href="@Url.Action("Index", "Home", new { roomTypeId = Model.RoomTypeId })" class="btn btn-outline-secondary btn-sm">&larr; Quay lại</a>
+        </div>
+    </div>
+    <div class="card-custom-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-center p-3 rounded bg-light border mb-4">
+            <div>
+                <div class="small text-muted">Đơn giá phòng lưu trú</div>
+                <div class="fs-3 fw-bold text-danger">@price.ToString("N0") đ / đêm</div>
+            </div>
+            <div>
+                @if (Model.Status == "Available")
+                {
+                    <a href="@Url.Action("Create", "Booking", new { roomId = Model.Id })" class="btn btn-danger px-4 py-2 fw-bold">
+                        Đặt phòng @Model.RoomNumber ngay &rarr;
+                    </a>
+                }
+                else
+                {
+                    <button class="btn btn-secondary px-4 py-2" disabled>Phòng hiện không trống</button>
+                }
+            </div>
+        </div>
+
+        <table class="table table-bordered mb-4">
+            <tbody>
+                <tr>
+                    <th style="width: 32%;">Số phòng</th>
+                    <td class="fw-bold">Phòng @Model.RoomNumber (Tầng @Model.Floor)</td>
+                </tr>
+                <tr>
+                    <th>Loại phòng</th>
+                    <td>@categoryName</td>
+                </tr>
+                <tr>
+                    <th>Sức chứa tối đa</th>
+                    <td>Tối đa @maxGuests khách</td>
+                </tr>
+                <tr>
+                    <th>Giá phòng</th>
+                    <td class="fw-bold text-danger">@price.ToString("N0") đ / đêm</td>
+                </tr>
+                <tr>
+                    <th>Tiện nghi trong phòng</th>
+                    <td>@desc</td>
+                </tr>
+                <tr>
+                    <th>Quy định đặt cọc</th>
+                    <td>Đặt cọc trước tối thiểu <strong>30% tiền phòng</strong> (từ @depositSuggested.ToString("N0") đ) khi đặt phòng.</td>
+                </tr>
+                @if (!string.IsNullOrEmpty(Model.Notes))
+                {
+                    <tr>
+                        <th>Ghi chú</th>
+                        <td>@Model.Notes</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @if (serviceList != null && serviceList.Any())
+        {
+            <h6 class="fw-bold text-dark mb-2">Dịch vụ đi kèm tại cơ sở lưu trú:</h6>
+            <div class="row g-2 mb-4">
+                @foreach (var s in serviceList)
+                {
+                    <div class="col-sm-6">
+                        <div class="p-2 border rounded small d-flex justify-content-between">
+                            <span>@s.Name</span>
+                            <strong class="text-danger">@s.Price.ToString("N0")đ/@s.Unit</strong>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+            <a href="@Url.Action("Index", "Home", new { roomTypeId = Model.RoomTypeId })" class="btn btn-outline-secondary">Quay lại</a>
+            @if (Model.Status == "Available")
+            {
+                <a href="@Url.Action("Create", "Booking", new { roomId = Model.Id })" class="btn btn-danger px-4 fw-bold">
+                    Đặt phòng @Model.RoomNumber &rarr;
+                </a>
+            }
+        </div>
+    </div>
+</div>
